@@ -2,39 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* LukemanBnB Design System - Coastal Luxury Theme */
 
 @layer base {
   :root {
+    /* Coastal Color Palette */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 28% 17%;
+    
+    /* Ocean Blue Primary */
+    --primary: 213 94% 68%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 213 94% 78%;
+    --primary-dark: 213 94% 48%;
+    
+    /* Coastal Secondary */
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Tropical Accent */
+    --accent: 43 96% 56%;
+    --accent-foreground: 215 28% 17%;
+    
+    /* Ocean Gradients */
+    --gradient-ocean: linear-gradient(135deg, hsl(213, 94%, 68%) 0%, hsl(199, 89%, 48%) 100%);
+    --gradient-sunset: linear-gradient(135deg, hsl(43, 96%, 56%) 0%, hsl(24, 95%, 53%) 100%);
+    --gradient-tropical: linear-gradient(135deg, hsl(152, 76%, 36%) 0%, hsl(199, 89%, 48%) 100%);
+    
+    /* Elegant Shadows */
+    --shadow-luxury: 0 10px 40px -10px hsl(213 94% 68% / 0.3);
+    --shadow-card: 0 4px 20px -4px hsl(215 28% 17% / 0.1);
+    --shadow-hover: 0 20px 60px -10px hsl(213 94% 68% / 0.4);
+    
+    /* Smooth Transitions */
+    --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
+    /* Card & Surface Colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 28% 17%;
+    --card-luxury: 0 0% 99%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 28% 17%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Muted & Subtle */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --muted-luxury: 199 20% 95%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Border & Input */
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 213 94% 68%;
 
     --radius: 0.5rem;
 
@@ -56,33 +78,38 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 215 28% 7%;
+    --foreground: 0 0% 98%;
+    
+    --primary: 213 94% 68%;
+    --primary-foreground: 215 28% 7%;
+    --primary-light: 213 94% 78%;
+    --primary-dark: 213 94% 48%;
+    
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 43 96% 56%;
+    --accent-foreground: 215 28% 7%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 215 28% 9%;
+    --card-foreground: 0 0% 98%;
+    --card-luxury: 215 28% 11%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 28% 9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 215 28% 15%;
+    --muted-foreground: 215 16% 65%;
+    --muted-luxury: 215 28% 13%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Border & Input */
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 213 94% 68%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
