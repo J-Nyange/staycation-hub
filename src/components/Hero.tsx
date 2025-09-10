@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import heroVilla from "@/assets/hero-villa.jpg";
+import SearchWidget from "./SearchWidget";
 
 const Hero = () => {
   return (
@@ -16,8 +17,8 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center lg:text-left">
-        <div className="max-w-4xl mx-auto lg:mx-0">
+      <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto">
           {/* Badge */}
           <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 mb-6">
             <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -33,16 +34,21 @@ const Hero = () => {
           </h1>
 
           {/* Description */}
-          <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+          <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
             Experience luxury accommodations across Kenya's most stunning coastal destinations. 
             From beachfront villas to cozy homestays, find your ideal getaway.
           </p>
 
+          {/* Search Widget */}
+          <div className="max-w-5xl mx-auto mb-8">
+            <SearchWidget />
+          </div>
+
           {/* Location Highlights */}
-          <div className="flex flex-wrap justify-center lg:justify-start items-center gap-4 mb-8">
+          <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
             {[
               "Vipingo, Kilifi",
-              "Diani Beach",
+              "Diani Beach", 
               "Nyali, Mombasa",
               "Voi, Taita Taveta"
             ].map((location) => (
@@ -54,7 +60,7 @@ const Hero = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
               variant="luxury"

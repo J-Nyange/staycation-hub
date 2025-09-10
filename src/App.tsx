@@ -8,6 +8,8 @@ import Airbnb from "./pages/Airbnb";
 import Villas from "./pages/Villas";
 import Homestays from "./pages/Homestays";
 import Blog from "./pages/Blog";
+import About from "./pages/About";
+import Contacts from "./pages/Contacts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/villas" element={<Villas />} />
           <Route path="/homestays" element={<Homestays />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contacts" element={<Contacts />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

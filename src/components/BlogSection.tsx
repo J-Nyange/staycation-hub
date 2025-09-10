@@ -46,21 +46,19 @@ const BlogSection = () => {
     <section className="py-16 lg:py-24 bg-gradient-to-b from-muted-luxury/20 to-background">
       <div className="container mx-auto px-4 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12">
-          <div className="mb-8 lg:mb-0">
-            <div className="inline-flex items-center bg-secondary/10 text-secondary rounded-full px-4 py-2 text-sm font-medium mb-4">
-              Travel Insights
-            </div>
-            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-              Stories & 
-              <span className="bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-                {" "}Travel Tips
-              </span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-xl">
-              Expert insights, local stories, and insider tips to help you make the most of your coastal adventure
-            </p>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center bg-secondary/10 text-secondary rounded-full px-4 py-2 text-sm font-medium mb-4">
+            Travel Insights
           </div>
+          <h2 className="text-3xl lg:text-5xl font-bold mb-4">
+            Stories & 
+            <span className="bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+              {" "}Travel Tips
+            </span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            Expert insights, local stories, and insider tips to help you make the most of your coastal adventure
+          </p>
           
           <Button variant="outline" className="group">
             View All Posts
