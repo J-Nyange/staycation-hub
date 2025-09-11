@@ -1,59 +1,25 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
-import homestayCottage from "@/assets/homestay-cottage.jpg";
+import { useProperties } from "@/hooks/useProperties";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Homestays = () => {
-  const homestayProperties = [
-    {
-      id: "1",
-      title: "Cozy Coastal Cottage",
-      location: "Nyali, Mombasa",
-      price: 120,
-      rating: 4.8,
-      reviews: 32,
-      guests: 4,
-      image: homestayCottage,
-      category: "homestay" as const,
-      amenities: ["wifi", "parking", "garden", "breakfast"],
-    },
-    {
-      id: "2",
-      title: "Traditional Homestay",
-      location: "Malindi, Kilifi",
-      price: 75,
-      rating: 4.5,
-      reviews: 15,
-      guests: 3,
-      image: homestayCottage,
-      category: "homestay" as const,
-      amenities: ["wifi", "breakfast", "cultural-experience"],
-    },
-    {
-      id: "3",
-      title: "Family Friendly Cottage",
-      location: "Watamu, Kilifi",
-      price: 95,
-      rating: 4.7,
-      reviews: 28,
-      guests: 5,
-      image: homestayCottage,
-      category: "homestay" as const,
-      amenities: ["wifi", "garden", "breakfast", "family-activities"],
-    },
-    {
-      id: "4",
-      title: "Authentic Local Experience",
-      location: "Lamu, Lamu County",
-      price: 85,
-      rating: 4.9,
-      reviews: 21,
-      guests: 3,
-      image: homestayCottage,
-      category: "homestay" as const,
-      amenities: ["wifi", "breakfast", "cultural-tours", "local-guide"],
-    },
-  ];
+  const { data: homestayProperties = [], isLoading, error } = useProperties('homestay');
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <section className="py-16 lg:py-24">
+          <div className="container mx-auto px-4 lg:px-8 text-center">
+            <p className="text-muted-foreground">Error loading homestays. Please try again later.</p>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,9 +56,23 @@ const Homestays = () => {
       <section className="py-16">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {homestayProperties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))}
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="bg-card rounded-2xl overflow-hidden">
+                  <Skeleton className="w-full h-64" />
+                  <div className="p-6">
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              homestayProperties.map((property) => (
+                <PropertyCard key={property.id} {...property} />
+              ))
+            )}
           </div>
         </div>
       </section>

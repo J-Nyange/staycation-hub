@@ -1,47 +1,25 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
-import heroVilla from "@/assets/hero-villa.jpg";
+import { useProperties } from "@/hooks/useProperties";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Villas = () => {
-  const villaProperties = [
-    {
-      id: "1",
-      title: "Executive Vipingo Villa",
-      location: "Vipingo, Kilifi",
-      price: 180,
-      rating: 4.9,
-      reviews: 45,
-      guests: 6,
-      image: heroVilla,
-      category: "villa" as const,
-      amenities: ["wifi", "parking", "pool", "kitchen"],
-    },
-    {
-      id: "2",
-      title: "Luxury Beachfront Villa",
-      location: "Vipingo, Kilifi",
-      price: 250,
-      rating: 5.0,
-      reviews: 67,
-      guests: 8,
-      image: heroVilla,
-      category: "villa" as const,
-      amenities: ["wifi", "parking", "pool", "kitchen", "beach-access"],
-    },
-    {
-      id: "3",
-      title: "Oceanview Villa Paradise",
-      location: "Diani Beach, Ukunda",
-      price: 220,
-      rating: 4.8,
-      reviews: 39,
-      guests: 7,
-      image: heroVilla,
-      category: "villa" as const,
-      amenities: ["wifi", "parking", "pool", "kitchen", "ocean-view"],
-    },
-  ];
+  const { data: villaProperties = [], isLoading, error } = useProperties('villa');
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <section className="py-16 lg:py-24">
+          <div className="container mx-auto px-4 lg:px-8 text-center">
+            <p className="text-muted-foreground">Error loading villas. Please try again later.</p>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,9 +56,23 @@ const Villas = () => {
       <section className="py-16">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {villaProperties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))}
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="bg-card rounded-2xl overflow-hidden">
+                  <Skeleton className="w-full h-64" />
+                  <div className="p-6">
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              villaProperties.map((property) => (
+                <PropertyCard key={property.id} {...property} />
+              ))
+            )}
           </div>
         </div>
       </section>
