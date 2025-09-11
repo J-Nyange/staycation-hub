@@ -18,7 +18,7 @@ const Hero = () => {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto py-6">
           {/* Badge */}
           <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 mb-6">
             <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -72,7 +72,7 @@ const Hero = () => {
             <Button 
               size="lg" 
               variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 backdrop-blur-md"
+              className="border-white/30 bg-white/10 text-white hover:bg-transparent hover:translate-y-[-5px] transition-transform backdrop-blur-md"
             >
               Watch Virtual Tour
             </Button>

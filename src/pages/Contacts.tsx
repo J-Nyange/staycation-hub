@@ -66,8 +66,8 @@ const Contacts = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Email Address</h3>
                       <p className="text-muted-foreground">
-                        info@lukemanbnb.com<br />
-                        bookings@lukemanbnb.com
+                        info@Villa Horizon.com<br />
+                        bookings@Villa Horizon.com
                       </p>
                     </div>
                   </div>
