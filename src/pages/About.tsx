@@ -13,7 +13,7 @@ const About = () => {
             <h1 className="text-4xl lg:text-6xl font-bold mb-6">
               About
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {" "}LukemanBnB
+                {" "}Villa Horizon
               </span>
             </h1>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -30,7 +30,7 @@ const About = () => {
                 <h2 className="text-3xl lg:text-4xl font-bold mb-6">Our Story</h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    Founded with a vision to showcase Kenya's stunning coastal beauty, LukemanBnB began as a passion project to connect travelers with unique, luxury accommodations along our pristine coastline.
+                    Founded with a vision to showcase Kenya's stunning coastal beauty, Villa Horizon began as a passion project to connect travelers with unique, luxury accommodations along our pristine coastline.
                   </p>
                   <p>
                     From the white sand beaches of Diani to the cultural richness of Mombasa, we curate exceptional properties that offer more than just a place to stay – they provide gateways to unforgettable experiences.

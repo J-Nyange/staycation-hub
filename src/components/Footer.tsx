@@ -42,7 +42,7 @@ const Footer = () => {
                 L
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                LukemanBnB
+                Villa Horizon
               </span>
             </Link>
             <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -119,7 +119,7 @@ const Footer = () => {
                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-muted-foreground">hello@lukemanbnb.com</span>
+                <span className="text-muted-foreground">hello@Villa Horizon.com</span>
               </div>
             </div>
 
@@ -143,7 +143,7 @@ const Footer = () => {
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             {/* Copyright */}
             <div className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} LukemanBnB. All rights reserved.
+              © {new Date().getFullYear()} Villa Horizon. All rights reserved.
             </div>
 
             {/* Legal Links */}
