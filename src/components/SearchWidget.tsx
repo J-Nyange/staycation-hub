@@ -10,12 +10,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useSearch } from "@/hooks/useSearch";
 
 interface SearchWidgetProps {
   className?: string;
+  onSearchResults?: (results: any[]) => void;
 }
 
-const SearchWidget = ({ className }: SearchWidgetProps) => {
+const SearchWidget = ({ className, onSearchResults }: SearchWidgetProps) => {
   const [location, setLocation] = useState("");
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
@@ -25,8 +27,16 @@ const SearchWidget = ({ className }: SearchWidgetProps) => {
     infants: 0,
   });
   const [guestsOpen, setGuestsOpen] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const totalGuests = guests.adults + guests.children + guests.infants;
+
+  const { data: searchResults, isLoading } = useSearch({
+    location: hasSearched ? location : undefined,
+    checkIn: hasSearched ? checkIn : undefined,
+    checkOut: hasSearched ? checkOut : undefined,
+    guests: hasSearched ? totalGuests : undefined,
+  });
 
   const handleGuestChange = (type: keyof typeof guests, increment: boolean) => {
     setGuests(prev => ({
@@ -36,8 +46,10 @@ const SearchWidget = ({ className }: SearchWidgetProps) => {
   };
 
   const handleSearch = () => {
-    console.log("Search:", { location, checkIn, checkOut, guests });
-    // TODO: Implement search functionality
+    setHasSearched(true);
+    if (onSearchResults && searchResults) {
+      onSearchResults(searchResults);
+    }
   };
 
   return (
@@ -228,9 +240,10 @@ const SearchWidget = ({ className }: SearchWidgetProps) => {
           onClick={handleSearch}
           className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl"
           size="lg"
+          disabled={isLoading}
         >
           <Search className="w-4 h-4 mr-2" />
-          Search Properties
+          {isLoading ? "Searching..." : "Search Properties"}
         </Button>
       </div>
     </div>

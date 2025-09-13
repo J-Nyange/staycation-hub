@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Heart, MapPin, Star, Users, Wifi, Car } from "lucide-react";
+import { Heart, MapPin, Star, Users, Wifi, Car, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
+import { usePropertyAvailability } from "@/hooks/useAvailability";
 import { Property } from "@/hooks/useProperties";
 import AuthModal from "@/components/AuthModal";
-import BookingModal from "@/components/BookingModal";
+import PropertyDetailsModal from "@/components/PropertyDetailsModal";
 
 interface PropertyCardProps {
   id: string;
@@ -36,9 +37,10 @@ interface PropertyCardProps {
 
 const PropertyCard = (property: PropertyCardProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const { user } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { data: availability } = usePropertyAvailability(property.id);
 
   // Use database properties with fallbacks for compatibility
   const price = property.price || property.price_per_night;
@@ -59,12 +61,8 @@ const PropertyCard = (property: PropertyCardProps) => {
     }
   };
 
-  const handleBookingClick = () => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-    setIsBookingModalOpen(true);
+  const handleDetailsClick = () => {
+    setIsDetailsModalOpen(true);
   };
 
   const categoryColors = {
@@ -92,9 +90,20 @@ const PropertyCard = (property: PropertyCardProps) => {
           
           {/* Overlay Elements */}
           <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-            <Badge className={categoryColors[property.category]}>
-              {categoryLabels[property.category]}
-            </Badge>
+            <div className="flex space-x-2">
+              <Badge className={categoryColors[property.category]}>
+                {categoryLabels[property.category]}
+              </Badge>
+              <Badge 
+                className={
+                  availability?.isGenerallyAvailable 
+                    ? "bg-green-100 text-green-800 border-green-200" 
+                    : "bg-red-100 text-red-800 border-red-200"
+                }
+              >
+                {availability?.isGenerallyAvailable ? "Available" : "Unavailable"}
+              </Badge>
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -156,12 +165,10 @@ const PropertyCard = (property: PropertyCardProps) => {
               variant="luxury" 
               size="sm"
               className="group"
-              onClick={handleBookingClick}
+              onClick={handleDetailsClick}
             >
-              Book Now
-              <div className="w-0 group-hover:w-4 overflow-hidden transition-all duration-300">
-                <Star className="w-4 h-4 ml-2" />
-              </div>
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
             </Button>
           </div>
         </div>
@@ -174,14 +181,12 @@ const PropertyCard = (property: PropertyCardProps) => {
         onOpenChange={setIsAuthModalOpen}
       />
 
-      {/* Booking Modal */}
-      {user && (
-        <BookingModal
-          property={property as Property}
-          open={isBookingModalOpen}
-          onOpenChange={setIsBookingModalOpen}
-        />
-      )}
+      {/* Property Details Modal */}
+      <PropertyDetailsModal
+        property={property as Property}
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+      />
     </>
   );
 };

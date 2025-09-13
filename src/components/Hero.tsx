@@ -1,9 +1,23 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import heroVilla from "@/assets/hero-villa.jpg";
 import SearchWidget from "./SearchWidget";
+import SearchResults from "./SearchResults";
+import { Property } from "@/hooks/useProperties";
 
 const Hero = () => {
+  const [searchResults, setSearchResults] = useState<Property[] | null>(null);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSearchResults = (results: Property[]) => {
+    setSearchResults(results);
+    setShowResults(true);
+  };
+
+  if (showResults && searchResults) {
+    return <SearchResults results={searchResults} isLoading={false} />;
+  }
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -41,7 +55,7 @@ const Hero = () => {
 
           {/* Search Widget */}
           <div className="max-w-5xl mx-auto mb-8">
-            <SearchWidget />
+            <SearchWidget onSearchResults={handleSearchResults} />
           </div>
 
           {/* Location Highlights */}

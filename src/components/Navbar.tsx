@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, Search, LogOut, Heart } from "lucide-react";
+import { Menu, X, User, Search, LogOut, Heart, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
+import AddPropertyModal from "@/components/AddPropertyModal";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
 
@@ -75,45 +77,61 @@ const Navbar = () => {
             </Button>
             
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hover:bg-muted">
-                    <User className="w-4 h-4 mr-2" />
-                    {user.email?.split('@')[0]}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem>
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Heart className="w-4 h-4 mr-2" />
-                    My Wishlist
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddPropertyModalOpen(true)}
+                  className="border-primary/20 hover:bg-primary/5"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Property
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="hover:bg-muted">
+                      <User className="w-4 h-4 mr-2" />
+                      {user.email?.split('@')[0]}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem>
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Heart className="w-4 h-4 mr-2" />
+                      My Wishlist
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
-              <AuthModal 
-                trigger={
-                  <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/5">
-                    <User className="w-4 h-4 mr-2" />
-                    Sign In
-                  </Button>
-                }
-                open={isAuthModalOpen}
-                onOpenChange={setIsAuthModalOpen}
-              />
+              <>
+                <AuthModal 
+                  trigger={
+                    <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/5">
+                      <User className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                  }
+                  open={isAuthModalOpen}
+                  onOpenChange={setIsAuthModalOpen}
+                />
+                <Button 
+                  variant="luxury" 
+                  size="sm"
+                  onClick={() => setIsAuthModalOpen(true)}
+                >
+                  Sign Up
+                </Button>
+              </>
             )}
-            
-            <Button variant="luxury" size="sm">
-              Book Now
-            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -178,6 +196,14 @@ const Navbar = () => {
             <div className="pt-4 border-t border-border/50 space-y-2">
               {user ? (
                 <>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setIsAddPropertyModalOpen(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Property
+                  </Button>
                   <Button variant="outline" className="w-full">
                     <User className="w-4 h-4 mr-2" />
                     {user.email?.split('@')[0]}
@@ -188,24 +214,36 @@ const Navbar = () => {
                   </Button>
                 </>
               ) : (
-                <AuthModal 
-                  trigger={
-                    <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
-                      <User className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                  }
-                  open={isAuthModalOpen}
-                  onOpenChange={setIsAuthModalOpen}
-                />
+                <>
+                  <AuthModal 
+                    trigger={
+                      <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
+                        <User className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                    }
+                    open={isAuthModalOpen}
+                    onOpenChange={setIsAuthModalOpen}
+                  />
+                  <Button 
+                    variant="luxury" 
+                    className="w-full"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    Sign Up
+                  </Button>
+                </>
               )}
-              <Button variant="luxury" className="w-full">
-                Book Now
-              </Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Add Property Modal */}
+      <AddPropertyModal
+        open={isAddPropertyModalOpen}
+        onOpenChange={setIsAddPropertyModalOpen}
+      />
     </nav>
   );
 };
