@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, Search, LogOut, Heart, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import AuthModal from "@/components/AuthModal";
 import AddPropertyModal from "@/components/AddPropertyModal";
 
@@ -14,7 +15,9 @@ const Navbar = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { getDisplayName } = useUserProfile();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -91,15 +94,15 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="hover:bg-muted">
                       <User className="w-4 h-4 mr-2" />
-                      {user.email?.split('@')[0]}
+                      {getDisplayName()}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="w-4 h-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/wishlist')}>
                       <Heart className="w-4 h-4 mr-2" />
                       My Wishlist
                     </DropdownMenuItem>
@@ -124,9 +127,10 @@ const Navbar = () => {
                   onOpenChange={setIsAuthModalOpen}
                 />
                 <Button 
-                  variant="luxury" 
+                  variant="outline" 
                   size="sm"
                   onClick={() => setIsAuthModalOpen(true)}
+                  className="border-primary/20 hover:bg-primary/5"
                 >
                   Sign Up
                 </Button>
@@ -204,9 +208,13 @@ const Navbar = () => {
                     <Plus className="w-4 h-4 mr-2" />
                     Add Property
                   </Button>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => navigate('/profile')}>
                     <User className="w-4 h-4 mr-2" />
-                    {user.email?.split('@')[0]}
+                    {getDisplayName()}
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => navigate('/wishlist')}>
+                    <Heart className="w-4 h-4 mr-2" />
+                    My Wishlist
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => signOut()}>
                     <LogOut className="w-4 h-4 mr-2" />
@@ -226,8 +234,8 @@ const Navbar = () => {
                     onOpenChange={setIsAuthModalOpen}
                   />
                   <Button 
-                    variant="luxury" 
-                    className="w-full"
+                    variant="outline" 
+                    className="w-full border-primary/20 hover:bg-primary/5"
                     onClick={() => setIsAuthModalOpen(true)}
                   >
                     Sign Up

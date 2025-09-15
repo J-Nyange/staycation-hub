@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import AuthModal from "@/components/AuthModal";
 import BookingModal from "@/components/BookingModal";
+import ImageCarousel from "@/components/ImageCarousel";
 
 interface PropertyDetailsModalProps {
   property: Property | null;
@@ -78,12 +79,15 @@ const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsM
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Main Image */}
+            {/* Image Carousel */}
             <div className="relative">
-              <img
-                src={property.main_image || '/src/assets/hero-villa.jpg'}
+              <ImageCarousel
+                images={property.images && property.images.length > 0 
+                  ? property.images 
+                  : (property.main_image ? [property.main_image] : ['/src/assets/hero-villa.jpg'])
+                }
                 alt={property.title}
-                className="w-full h-64 md:h-80 object-cover rounded-lg"
+                className="h-64 md:h-80"
               />
               <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
                 <Badge className={categoryColors[property.category]}>

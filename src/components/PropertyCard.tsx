@@ -8,6 +8,7 @@ import { usePropertyAvailability } from "@/hooks/useAvailability";
 import { Property } from "@/hooks/useProperties";
 import AuthModal from "@/components/AuthModal";
 import PropertyDetailsModal from "@/components/PropertyDetailsModal";
+import ImageCarousel from "@/components/ImageCarousel";
 
 interface PropertyCardProps {
   id: string;
@@ -44,7 +45,9 @@ const PropertyCard = (property: PropertyCardProps) => {
 
   // Use database properties with fallbacks for compatibility
   const price = property.price || property.price_per_night;
-  const image = property.image || property.main_image || '/src/assets/hero-villa.jpg';
+  const images = property.images && property.images.length > 0 
+    ? property.images 
+    : [property.image || property.main_image || '/src/assets/hero-villa.jpg'];
   const rating = property.rating || 4.5;
   const reviews = property.reviews || 12;
   const isLiked = isInWishlist(property.id);
@@ -82,10 +85,10 @@ const PropertyCard = (property: PropertyCardProps) => {
       <div className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:scale-[1.02]">
         {/* Image Container */}
         <div className="relative overflow-hidden">
-          <img
-            src={image}
+          <ImageCarousel
+            images={images}
             alt={property.title}
-            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700"
+            className="h-64"
           />
           
           {/* Overlay Elements */}
@@ -162,7 +165,7 @@ const PropertyCard = (property: PropertyCardProps) => {
               <span className="text-muted-foreground text-sm ml-1">/ night</span>
             </div>
             <Button 
-              variant="luxury" 
+              variant="outline" 
               size="sm"
               className="group"
               onClick={handleDetailsClick}

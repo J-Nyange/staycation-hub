@@ -27,7 +27,7 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
     guests: "",
     bedrooms: "",
     bathrooms: "",
-    main_image: "",
+    images: ["", "", ""] as string[],
     amenities: [] as string[],
   });
 
@@ -60,6 +60,26 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validation
+    if (formData.description.length < 100) {
+      toast({
+        variant: "destructive",
+        title: "Description Required",
+        description: "Please provide a detailed description of at least 100 characters.",
+      });
+      return;
+    }
+
+    const validImages = formData.images.filter(img => img.trim() !== '');
+    if (validImages.length < 3) {
+      toast({
+        variant: "destructive",
+        title: "Images Required",
+        description: "Please provide at least 3 property images.",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -67,14 +87,15 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
         .from('properties')
         .insert({
           title: formData.title,
-          description: formData.description || null,
+          description: formData.description,
           location: formData.location,
           category: formData.category as 'airbnb' | 'villa' | 'homestay',
           price_per_night: parseFloat(formData.price_per_night),
           guests: parseInt(formData.guests),
           bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
           bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
-          main_image: formData.main_image || null,
+          main_image: validImages[0],
+          images: validImages,
           amenities: formData.amenities,
           owner_id: user.id,
           is_active: true,
@@ -97,7 +118,7 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
         guests: "",
         bedrooms: "",
         bathrooms: "",
-        main_image: "",
+        images: ["", "", ""],
         amenities: [],
       });
 
@@ -144,13 +165,19 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description * (minimum 100 characters)</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={3}
+              rows={4}
+              required
+              minLength={100}
+              placeholder="Provide a detailed description of your property including amenities, location highlights, and what makes it special..."
             />
+            <p className="text-sm text-muted-foreground">
+              {formData.description.length}/100 characters
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -218,15 +245,34 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image">Main Image URL</Label>
-            <Input
-              id="image"
-              type="url"
-              value={formData.main_image}
-              onChange={(e) => setFormData(prev => ({ ...prev, main_image: e.target.value }))}
-              placeholder="https://example.com/image.jpg"
-            />
+          <div className="space-y-4">
+            <Label>Property Images * (minimum 3 required)</Label>
+            {formData.images.map((image, index) => (
+              <div key={index} className="space-y-2">
+                <Label htmlFor={`image-${index}`}>Image {index + 1} URL</Label>
+                <Input
+                  id={`image-${index}`}
+                  type="url"
+                  value={image}
+                  onChange={(e) => {
+                    const newImages = [...formData.images];
+                    newImages[index] = e.target.value;
+                    setFormData(prev => ({ ...prev, images: newImages }));
+                  }}
+                  placeholder="https://example.com/image.jpg"
+                  required={index < 3}
+                />
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setFormData(prev => ({ ...prev, images: [...prev.images, ""] }))}
+              className="mt-2"
+            >
+              Add Another Image
+            </Button>
           </div>
 
           <div className="space-y-2">
