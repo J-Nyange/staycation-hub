@@ -14,7 +14,7 @@ import { useSearch } from "@/hooks/useSearch";
 
 interface SearchWidgetProps {
   className?: string;
-  onSearchResults?: (results: any[]) => void;
+  onSearchResults?: (results: any[], query?: string) => void;
 }
 
 const SearchWidget = ({ className, onSearchResults }: SearchWidgetProps) => {
@@ -32,10 +32,10 @@ const SearchWidget = ({ className, onSearchResults }: SearchWidgetProps) => {
   const totalGuests = guests.adults + guests.children + guests.infants;
 
   const { data: searchResults, isLoading } = useSearch({
-    location: hasSearched ? location : undefined,
-    checkIn: hasSearched ? checkIn : undefined,
-    checkOut: hasSearched ? checkOut : undefined,
-    guests: hasSearched ? totalGuests : undefined,
+    location: location || undefined,
+    checkIn: checkIn || undefined,
+    checkOut: checkOut || undefined,
+    guests: totalGuests > 0 ? totalGuests : undefined,
   });
 
   const handleGuestChange = (type: keyof typeof guests, increment: boolean) => {
@@ -48,7 +48,7 @@ const SearchWidget = ({ className, onSearchResults }: SearchWidgetProps) => {
   const handleSearch = () => {
     setHasSearched(true);
     if (onSearchResults && searchResults) {
-      onSearchResults(searchResults);
+      onSearchResults(searchResults, location);
     }
   };
 

@@ -1,11 +1,14 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
-import { useProperties } from "@/hooks/useProperties";
+import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
+import FilterSort from "@/components/FilterSort";
 
 const Airbnb = () => {
   const { data: airbnbProperties = [], isLoading, error } = useProperties('airbnb');
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
 
   if (error) {
     return (
@@ -55,6 +58,13 @@ const Airbnb = () => {
       {/* Properties Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4 lg:px-8">
+          {!isLoading && (
+            <FilterSort 
+              properties={airbnbProperties} 
+              onFilterChange={setFilteredProperties} 
+            />
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {isLoading ? (
               // Loading skeleton
@@ -69,7 +79,7 @@ const Airbnb = () => {
                 </div>
               ))
             ) : (
-              airbnbProperties.map((property) => (
+              (filteredProperties.length > 0 ? filteredProperties : airbnbProperties).map((property) => (
                 <PropertyCard key={property.id} {...property} />
               ))
             )}

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
-import { useProperties } from "@/hooks/useProperties";
+import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
+import FilterSort from "./FilterSort";
 
 const FeaturedProperties = () => {
   const [activeCategory, setActiveCategory] = useState<"all" | "airbnb" | "villa" | "homestay">("all");
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   
   const { data: properties = [], isLoading, error } = useProperties(activeCategory);
 
@@ -27,7 +29,7 @@ const FeaturedProperties = () => {
   ];
 
   return (
-    <section className="py-16 lg:py-24 bg-gradient-to-b from-background via-muted-luxury/30 to-background">
+    <section id="featured-properties" className="py-16 lg:py-24 bg-gradient-to-b from-background via-muted-luxury/30 to-background">
       <div className="container mx-auto px-4 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -46,12 +48,15 @@ const FeaturedProperties = () => {
         </div>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
           {categories.map((category) => (
             <Button
               key={category.id}
               variant={activeCategory === category.id ? "luxury" : "outline"}
-              onClick={() => setActiveCategory(category.id as any)}
+              onClick={() => {
+                setActiveCategory(category.id as any);
+                setFilteredProperties([]);
+              }}
               className="group"
             >
               {category.label}
@@ -65,6 +70,15 @@ const FeaturedProperties = () => {
             </Button>
           ))}
         </div>
+
+        {/* Filter and Sort */}
+        {!isLoading && properties.length > 0 && (
+          <FilterSort 
+            properties={properties} 
+            onFilterChange={setFilteredProperties} 
+            className="mb-8"
+          />
+        )}
 
         {/* Properties Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -81,7 +95,7 @@ const FeaturedProperties = () => {
               </div>
             ))
           ) : (
-            properties.map((property) => (
+            (filteredProperties.length > 0 ? filteredProperties : properties).map((property) => (
               <PropertyCard key={property.id} {...property} />
             ))
           )}

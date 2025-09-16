@@ -1,14 +1,17 @@
 import { Property } from "@/hooks/useProperties";
 import PropertyCard from "@/components/PropertyCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface SearchResultsProps {
   results: Property[];
   isLoading: boolean;
   searchQuery?: string;
+  onBackClick?: () => void;
 }
 
-const SearchResults = ({ results, isLoading, searchQuery }: SearchResultsProps) => {
+const SearchResults = ({ results, isLoading, searchQuery, onBackClick }: SearchResultsProps) => {
   if (isLoading) {
     return (
       <section className="py-16">
@@ -36,6 +39,17 @@ const SearchResults = ({ results, isLoading, searchQuery }: SearchResultsProps) 
   return (
     <section className="py-16">
       <div className="container mx-auto px-4 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2" 
+            onClick={onBackClick}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
+        </div>
+        
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">
             {searchQuery ? `Search Results for "${searchQuery}"` : "Search Results"}

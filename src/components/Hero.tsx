@@ -9,14 +9,28 @@ import { Property } from "@/hooks/useProperties";
 const Hero = () => {
   const [searchResults, setSearchResults] = useState<Property[] | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const handleSearchResults = (results: Property[]) => {
+  const handleSearchResults = (results: Property[], query: string = "") => {
     setSearchResults(results);
+    setSearchQuery(query);
     setShowResults(true);
   };
 
+  const handleBackClick = () => {
+    setShowResults(false);
+    setSearchResults(null);
+  };
+
   if (showResults && searchResults) {
-    return <SearchResults results={searchResults} isLoading={false} />;
+    return (
+      <SearchResults 
+        results={searchResults} 
+        isLoading={false} 
+        searchQuery={searchQuery}
+        onBackClick={handleBackClick}
+      />
+    );
   }
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -79,6 +93,7 @@ const Hero = () => {
               size="lg" 
               variant="luxury"
               className="group"
+              onClick={() => window.location.href = "#featured-properties"}
             >
               Explore Properties
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -87,6 +102,7 @@ const Hero = () => {
               size="lg" 
               variant="outline"
               className="border-white/30 bg-white/10 text-white hover:bg-transparent hover:translate-y-[-5px] transition-transform backdrop-blur-md"
+              onClick={() => window.open('https://www.youtube.com/watch?v=example-tour-video', '_blank')}
             >
               Watch Virtual Tour
             </Button>
