@@ -17,12 +17,15 @@ export interface Property {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  rating?: number;
+  review_count?: number;
 }
 
 export const useProperties = (category?: string) => {
   return useQuery({
     queryKey: ['properties', category],
     queryFn: async () => {
+      // First get properties
       let query = supabase
         .from('properties')
         .select('*')
@@ -39,7 +42,44 @@ export const useProperties = (category?: string) => {
         throw error;
       }
 
-      return data as Property[];
+      const properties = data as Property[];
+      
+      // Then get ratings for all properties in one batch
+      if (properties.length > 0) {
+        const propertyIds = properties.map(p => p.id);
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('property_id, rating')
+          .in('property_id', propertyIds);
+          
+        // Calculate average ratings
+        const ratingsMap = new Map();
+        const countMap = new Map();
+        
+        if (reviewsData) {
+          reviewsData.forEach(review => {
+            const { property_id, rating } = review;
+            if (!ratingsMap.has(property_id)) {
+              ratingsMap.set(property_id, 0);
+              countMap.set(property_id, 0);
+            }
+            ratingsMap.set(property_id, ratingsMap.get(property_id) + rating);
+            countMap.set(property_id, countMap.get(property_id) + 1);
+          });
+          
+          // Add ratings to properties
+          properties.forEach(property => {
+            const totalRating = ratingsMap.get(property.id) || 0;
+            const count = countMap.get(property.id) || 0;
+            if (count > 0) {
+              property.rating = parseFloat((totalRating / count).toFixed(1));
+              property.review_count = count;
+            }
+          });
+        }
+      }
+
+      return properties;
     },
   });
 };
