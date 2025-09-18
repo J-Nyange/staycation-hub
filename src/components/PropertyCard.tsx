@@ -48,8 +48,8 @@ const PropertyCard = (property: PropertyCardProps) => {
   const images = property.images && property.images.length > 0 
     ? property.images 
     : [property.image || property.main_image || '/src/assets/hero-villa.jpg'];
-  const rating = property.rating || 4.5;
-  const reviews = property.reviews || 12;
+  const rating = property.rating || 0;
+  const reviews = property.reviews || 0;
   const isLiked = isInWishlist(property.id);
   const handleWishlistToggle = () => {
     if (!user) {

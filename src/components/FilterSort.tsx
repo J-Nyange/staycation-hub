@@ -24,7 +24,7 @@ import {
 import { SlidersHorizontal } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 
-export type SortOption = "default" | "price-low-high" | "price-high-low" | "rating";
+export type SortOption = "default" | "price-low-high" | "price-high-low";
 
 export interface FilterOptions {
   priceRange: [number, number];
@@ -106,9 +106,7 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
       case "price-high-low":
         filteredResults.sort((a, b) => b.price_per_night - a.price_per_night);
         break;
-      case "rating":
-        // Assuming properties have a rating field, or using a default value
-        filteredResults.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      // Removing rating sort option as it's not available in the Property interface
         break;
       default:
         // Default sorting (could be by creation date or featured status)
@@ -271,7 +269,6 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
                       <SelectItem value="default">Default</SelectItem>
                       <SelectItem value="price-low-high">Price: Low to High</SelectItem>
                       <SelectItem value="price-high-low">Price: High to Low</SelectItem>
-                      <SelectItem value="rating">Best Rating</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -303,7 +300,6 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
                 <SelectItem value="default">Default</SelectItem>
                 <SelectItem value="price-low-high">Price: Low to High</SelectItem>
                 <SelectItem value="price-high-low">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Best Rating</SelectItem>
               </SelectContent>
             </Select>
           </div>
