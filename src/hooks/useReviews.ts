@@ -33,7 +33,10 @@ export const useReviews = (propertyId: string) => {
       }
 
       // Then fetch user profiles for these reviews
-      const reviews = [...reviewsData];
+      const reviews: Review[] = reviewsData.map(r => ({
+        ...r,
+        profiles: undefined
+      }));
       
       // Get unique user IDs from reviews
       const userIds = [...new Set(reviews.map(review => review.user_id))];
@@ -49,7 +52,7 @@ export const useReviews = (propertyId: string) => {
         }
         
         // Create a map of user_id to profile data
-        const profileMap = new Map();
+        const profileMap = new Map<string, { full_name: string; avatar_url: string | null }>();
         profilesData.forEach(profile => {
           profileMap.set(profile.user_id, {
             full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
@@ -66,7 +69,7 @@ export const useReviews = (propertyId: string) => {
         });
       }
 
-      return reviews as Review[];
+      return reviews;
     },
   });
 };
