@@ -13,6 +13,8 @@ import About from "./pages/About";
 import Contacts from "./pages/Contacts";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
+import BookingHistory from "./pages/BookingHistory";
+import MyProperties from "./pages/MyProperties";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/bookings" element={<BookingHistory />} />
+            <Route path="/my-properties" element={<MyProperties />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Search, LogOut, Heart, Plus } from "lucide-react";
+import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,10 +14,21 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { getDisplayName } = useUserProfile();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+      setIsSearchOpen(false);
+      setIsMenuOpen(false);
+      setSearchQuery("");
+    }
+  };
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -102,6 +113,14 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/my-properties')}>
+                      <Home className="w-4 h-4 mr-2" />
+                      My Properties
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/bookings')}>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Booking History
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/wishlist')}>
                       <Heart className="w-4 h-4 mr-2" />
                       My Wishlist
@@ -152,14 +171,16 @@ const Navbar = () => {
         {/* Search Bar */}
         {isSearchOpen && (
           <div className="hidden lg:block py-4 border-t border-border/50">
-            <div className="relative max-w-md mx-auto">
+            <form onSubmit={handleSearch} className="relative max-w-md mx-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search properties, locations..."
                 className="pl-10 bg-muted/50 border-0 focus:bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+            </form>
           </div>
         )}
       </div>
@@ -169,14 +190,16 @@ const Navbar = () => {
         <div className="lg:hidden border-t border-border/50 bg-background/95 backdrop-blur-md">
           <div className="px-4 py-4 space-y-4">
             {/* Mobile Search */}
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search properties..."
                 className="pl-10 bg-muted/50 border-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+            </form>
 
             {/* Mobile Navigation */}
             <div className="space-y-2">
@@ -211,6 +234,14 @@ const Navbar = () => {
                   <Button variant="outline" className="w-full" onClick={() => navigate('/profile')}>
                     <User className="w-4 h-4 mr-2" />
                     {getDisplayName()}
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => navigate('/my-properties')}>
+                    <Home className="w-4 h-4 mr-2" />
+                    My Properties
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => navigate('/bookings')}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Booking History
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => navigate('/wishlist')}>
                     <Heart className="w-4 h-4 mr-2" />
