@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
 import BookingHistory from "./pages/BookingHistory";
 import MyProperties from "./pages/MyProperties";
+import PropertyDetails from "./pages/PropertyDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

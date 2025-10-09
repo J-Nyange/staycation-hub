@@ -9,7 +9,22 @@ const FeaturedProperties = () => {
   const [activeCategory, setActiveCategory] = useState<"all" | "airbnb" | "villa" | "homestay">("all");
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   
-  const { data: properties = [], isLoading, error } = useProperties(activeCategory);
+  // Fetch all properties when "all" is selected, otherwise fetch by category
+  const { data: allProperties = [], isLoading, error } = useProperties();
+  
+  // Get properties to display based on active category
+  const getDisplayProperties = () => {
+    if (activeCategory === "all") {
+      // Show 2 from each category
+      const airbnbProps = allProperties.filter(p => p.category === "airbnb").slice(0, 2);
+      const villaProps = allProperties.filter(p => p.category === "villa").slice(0, 2);
+      const homestayProps = allProperties.filter(p => p.category === "homestay").slice(0, 2);
+      return [...airbnbProps, ...villaProps, ...homestayProps];
+    }
+    return allProperties.filter(p => p.category === activeCategory);
+  };
+  
+  const properties = getDisplayProperties();
 
   if (error) {
     return (
@@ -103,7 +118,15 @@ const FeaturedProperties = () => {
 
         {/* View All Button */}
         <div className="text-center">
-          <Button variant="outline" size="lg" className="group">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="group"
+            onClick={() => {
+              setActiveCategory("all");
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
             View All Properties
             <div className="w-0 group-hover:w-5 overflow-hidden transition-all duration-300">
               <span className="ml-2">→</span>

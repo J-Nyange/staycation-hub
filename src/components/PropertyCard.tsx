@@ -1,13 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, Users, Wifi, Car, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
-import { Property } from "@/hooks/useProperties";
 import AuthModal from "@/components/AuthModal";
-import PropertyDetailsModal from "@/components/PropertyDetailsModal";
 import ImageCarousel from "@/components/ImageCarousel";
 
 interface PropertyCardProps {
@@ -38,7 +37,7 @@ interface PropertyCardProps {
 
 const PropertyCard = (property: PropertyCardProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(property.id);
@@ -65,7 +64,7 @@ const PropertyCard = (property: PropertyCardProps) => {
   };
 
   const handleDetailsClick = () => {
-    setIsDetailsModalOpen(true);
+    navigate(`/property/${property.id}`);
   };
 
   const categoryColors = {
@@ -182,13 +181,6 @@ const PropertyCard = (property: PropertyCardProps) => {
         trigger={<></>}
         open={isAuthModalOpen}
         onOpenChange={setIsAuthModalOpen}
-      />
-
-      {/* Property Details Modal */}
-      <PropertyDetailsModal
-        property={property as Property}
-        open={isDetailsModalOpen}
-        onOpenChange={setIsDetailsModalOpen}
       />
     </>
   );
