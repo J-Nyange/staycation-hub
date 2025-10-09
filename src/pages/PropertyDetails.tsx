@@ -15,8 +15,8 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import BookingModal from "@/components/BookingModal";
 import AuthModal from "@/components/AuthModal";
-import ReviewList from "@/components/reviews/ReviewList";
-import ReviewForm from "@/components/reviews/ReviewForm";
+import { ReviewList } from "@/components/reviews/ReviewList";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
 import ImageCarousel from "@/components/ImageCarousel";
 
 const PropertyDetails = () => {
@@ -36,21 +36,6 @@ const PropertyDetails = () => {
         .select("*")
         .eq("id", id)
         .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
-
-  const { data: reviews = [] } = useQuery({
-    queryKey: ["reviews", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("*, profiles(first_name, last_name, avatar_url)")
-        .eq("property_id", id)
-        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -110,10 +95,6 @@ const PropertyDetails = () => {
   const images = property.images && property.images.length > 0 
     ? property.images 
     : [property.main_image || '/src/assets/hero-villa.jpg'];
-
-  const avgRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : 0;
 
   const categoryColors = {
     airbnb: "bg-primary/10 text-primary border-primary/20",
@@ -177,11 +158,6 @@ const PropertyDetails = () => {
                 <div className="flex items-center">
                   <MapPin className="w-5 h-5 mr-2" />
                   {property.location}
-                </div>
-                <div className="flex items-center">
-                  <Star className="w-5 h-5 mr-1 text-yellow-500 fill-current" />
-                  <span className="font-semibold">{avgRating}</span>
-                  <span className="ml-1">({reviews.length} reviews)</span>
                 </div>
               </div>
             </div>
@@ -248,7 +224,7 @@ const PropertyDetails = () => {
             {/* Reviews Section */}
             <div className="bg-card p-6 rounded-2xl">
               <h2 className="text-xl font-semibold mb-6">Guest Reviews</h2>
-              <ReviewList reviews={reviews} />
+              <ReviewList propertyId={property.id} />
               {user && (
                 <div className="mt-8 pt-8 border-t border-border">
                   <h3 className="text-lg font-semibold mb-4">Leave a Review</h3>
@@ -265,11 +241,6 @@ const PropertyDetails = () => {
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold">${property.price_per_night}</span>
                   <span className="text-muted-foreground">/ night</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                  <span className="font-semibold">{avgRating}</span>
-                  <span>({reviews.length} reviews)</span>
                 </div>
               </div>
 
@@ -307,13 +278,7 @@ const PropertyDetails = () => {
 
       {/* Modals */}
       <BookingModal
-        property={{
-          id: property.id,
-          title: property.title,
-          price: property.price_per_night,
-          location: property.location,
-          image: images[0],
-        }}
+        property={property as any}
         open={isBookingModalOpen}
         onOpenChange={setIsBookingModalOpen}
       />

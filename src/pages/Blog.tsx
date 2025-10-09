@@ -1,80 +1,40 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 const Blog = () => {
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Ultimate Guide to Diani Beach: Hidden Gems & Must-Visit Spots",
-      excerpt: "Discover the pristine beauty of Diani Beach beyond the resorts. From secret snorkeling spots to authentic local cuisine, explore the hidden treasures that make this coastal paradise truly special.",
-      author: "Sarah Johnson",
-      date: "2024-01-15",
-      readTime: "8 min read",
-      category: "Travel Guide",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80",
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "Booking Your Perfect Coastal Getaway: Insider Tips",
-      excerpt: "Learn from our hospitality experts about the best times to visit, what amenities to look for, and how to get the best deals on your coastal accommodation.",
-      author: "Michael Chen",
-      date: "2024-01-12",
-      readTime: "6 min read",
-      category: "Booking Tips",
-      image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80",
-      featured: false,
-    },
-    {
-      id: 3,
-      title: "Sustainable Tourism: Our Commitment to Kenya's Coast",
-      excerpt: "How we're working with local communities to ensure tourism benefits everyone while preserving the natural beauty of Kenya's coastal regions.",
-      author: "Emma Wilson",
-      date: "2024-01-10",
-      readTime: "5 min read",
-      category: "Sustainability",
-      image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80",
-      featured: false,
-    },
-    {
-      id: 4,
-      title: "Exploring Vipingo: A Coastal Paradise Beyond Mombasa",
-      excerpt: "Uncover the charm of Vipingo, where luxury meets nature. From pristine beaches to world-class accommodations, discover why this hidden gem is perfect for your next getaway.",
-      author: "David Kiprotich",
-      date: "2024-01-08",
-      readTime: "7 min read",
-      category: "Destinations",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-      featured: false,
-    },
-    {
-      id: 5,
-      title: "Cultural Immersion: Homestay Experiences in Coastal Kenya",
-      excerpt: "Dive deep into Kenyan culture through authentic homestay experiences. Learn about traditions, enjoy home-cooked meals, and create lasting memories with local families.",
-      author: "Grace Wanjiku",
-      date: "2024-01-05",
-      readTime: "9 min read",
-      category: "Culture",
-      image: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&q=80",
-      featured: false,
-    },
-    {
-      id: 6,
-      title: "Villa vs Homestay vs Airbnb: Which is Right for You?",
-      excerpt: "Confused about which accommodation type suits your travel style? We break down the pros and cons of each option to help you make the perfect choice.",
-      author: "James Mwangi",
-      date: "2024-01-03",
-      readTime: "6 min read",
-      category: "Booking Tips",
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80",
-      featured: false,
-    },
-  ];
+  const navigate = useNavigate();
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
-  const categories = ["All", "Travel Guide", "Booking Tips", "Sustainability", "Destinations", "Culture"];
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ["blog-posts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*")
+        .eq("is_published", true)
+        .order("published_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const categories = ["All", ...Array.from(new Set(posts.map((p) => p.category)))];
+
+  const filteredPosts = activeCategory === "All"
+    ? posts
+    : posts.filter((p) => p.category === activeCategory);
+
+  const featuredPost = filteredPosts[0];
+  const regularPosts = filteredPosts.slice(1);
 
   const categoryColors: Record<string, string> = {
     "Travel Guide": "bg-primary/10 text-primary border-primary/20",
@@ -83,9 +43,6 @@ const Blog = () => {
     "Destinations": "bg-muted text-muted-foreground border-muted-foreground/20",
     "Culture": "bg-primary/15 text-primary border-primary/30",
   };
-
-  const featuredPost = blogPosts.find(post => post.featured);
-  const regularPosts = blogPosts.filter(post => !post.featured);
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,8 +70,9 @@ const Blog = () => {
             {categories.map((category) => (
               <Button
                 key={category}
-                variant="outline"
+                variant={activeCategory === category ? "default" : "outline"}
                 size="sm"
+                onClick={() => setActiveCategory(category)}
                 className="hover:bg-primary/5"
               >
                 {category}
@@ -124,15 +82,25 @@ const Blog = () => {
         </div>
       </section>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="py-16 text-center">
+          <p className="text-muted-foreground">Loading posts...</p>
+        </div>
+      )}
+
       {/* Featured Post */}
-      {featuredPost && (
+      {!isLoading && featuredPost && (
         <section className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            <div className="bg-card rounded-3xl overflow-hidden shadow-luxury">
+            <div 
+              className="bg-card rounded-3xl overflow-hidden shadow-luxury cursor-pointer hover:scale-[1.01] transition-transform duration-300"
+              onClick={() => navigate(`/blog/${featuredPost.slug}`)}
+            >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
                 <div className="relative">
                   <img
-                    src={featuredPost.image}
+                    src={featuredPost.featured_image}
                     alt={featuredPost.title}
                     className="w-full h-64 lg:h-full object-cover"
                   />
@@ -146,11 +114,11 @@ const Blog = () => {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center">
                       <User className="w-3 h-3 mr-1" />
-                      {featuredPost.author}
+                      Villa Horizon Team
                     </div>
                     <div className="flex items-center">
                       <Clock className="w-3 h-3 mr-1" />
-                      {featuredPost.readTime}
+                      {Math.ceil(featuredPost.content.split(' ').length / 200)} min read
                     </div>
                   </div>
                   <h2 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight">
@@ -171,66 +139,72 @@ const Blog = () => {
       )}
 
       {/* Blog Posts Grid */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {regularPosts.map((post) => (
-              <article
-                key={post.id}
-                className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:scale-[1.02]"
-              >
-                <div className="relative overflow-hidden">
-                  <img
-                    src={post.image}
-                    alt={post.title}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <Badge className={categoryColors[post.category] || categoryColors["Travel Guide"]}>
-                      {post.category}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center">
-                      <User className="w-3 h-3 mr-1" />
-                      {post.author}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {post.readTime}
+      {!isLoading && regularPosts.length > 0 && (
+        <section className="py-16">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {regularPosts.map((post) => (
+                <article
+                  key={post.id}
+                  className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:scale-[1.02] cursor-pointer"
+                  onClick={() => navigate(`/blog/${post.slug}`)}
+                >
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={post.featured_image}
+                      alt={post.title}
+                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <Badge className={categoryColors[post.category] || categoryColors["Travel Guide"]}>
+                        {post.category}
+                      </Badge>
                     </div>
                   </div>
 
-                  <h3 className="font-semibold text-lg mb-3 leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                    {post.title}
-                  </h3>
+                  <div className="p-6">
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center">
+                        <User className="w-3 h-3 mr-1" />
+                        Villa Horizon Team
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {Math.ceil(post.content.split(' ').length / 200)} min read
+                      </div>
+                    </div>
 
-                  <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
-                    {post.excerpt}
-                  </p>
+                    <h3 className="font-semibold text-lg mb-3 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
 
-                  <div className="flex items-center justify-between">
-                    <time className="text-sm text-muted-foreground">
-                      {new Date(post.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </time>
-                    <Button variant="ghost" size="sm" className="group text-primary hover:text-primary">
-                      Read More
-                      <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <time className="text-sm text-muted-foreground">
+                        {format(new Date(post.published_at || post.created_at), "MMMM dd, yyyy")}
+                      </time>
+                      <Button variant="ghost" size="sm" className="group text-primary hover:text-primary">
+                        Read More
+                        <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && filteredPosts.length === 0 && (
+        <div className="py-16 text-center">
+          <p className="text-muted-foreground">No posts found in this category.</p>
         </div>
-      </section>
+      )}
 
       <Footer />
     </div>

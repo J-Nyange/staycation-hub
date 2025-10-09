@@ -1,11 +1,62 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+const contactFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name must be less than 50 characters"),
+  email: z.string().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  phone: z.string().max(20, "Phone number must be less than 20 characters").optional(),
+  subject: z.string().min(1, "Subject is required").max(200, "Subject must be less than 200 characters"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(2000, "Message must be less than 2000 characters"),
+});
+
+type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 const Contacts = () => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+  });
+
+  const onSubmit = async (data: ContactFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.functions.invoke('contact-form', {
+        body: data,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message sent successfully!",
+        description: "We'll get back to you as soon as possible.",
+      });
+      
+      reset();
+    } catch (error: any) {
+      console.error("Error submitting contact form:", error);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -66,8 +117,8 @@ const Contacts = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Email Address</h3>
                       <p className="text-muted-foreground">
-                        info@Villa Horizon.com<br />
-                        bookings@Villa Horizon.com
+                        info@villahorizon.com<br />
+                        bookings@villahorizon.com
                       </p>
                     </div>
                   </div>
@@ -98,43 +149,90 @@ const Contacts = () => {
               {/* Contact Form */}
               <div className="bg-card rounded-3xl p-8 shadow-card">
                 <h3 className="text-2xl font-bold mb-6">Send us a Message</h3>
-                <form className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">First Name</label>
-                      <Input placeholder="Your first name" />
+                      <label className="block text-sm font-medium mb-2">First Name*</label>
+                      <Input 
+                        placeholder="Your first name" 
+                        {...register("firstName")}
+                        className={errors.firstName ? "border-red-500" : ""}
+                      />
+                      {errors.firstName && (
+                        <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Last Name</label>
-                      <Input placeholder="Your last name" />
+                      <label className="block text-sm font-medium mb-2">Last Name*</label>
+                      <Input 
+                        placeholder="Your last name" 
+                        {...register("lastName")}
+                        className={errors.lastName ? "border-red-500" : ""}
+                      />
+                      {errors.lastName && (
+                        <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>
+                      )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Email Address</label>
-                    <Input type="email" placeholder="your@email.com" />
+                    <label className="block text-sm font-medium mb-2">Email Address*</label>
+                    <Input 
+                      type="email" 
+                      placeholder="your@email.com" 
+                      {...register("email")}
+                      className={errors.email ? "border-red-500" : ""}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Phone Number</label>
-                    <Input type="tel" placeholder="+254 (0) 700 000 000" />
+                    <Input 
+                      type="tel" 
+                      placeholder="+254 (0) 700 000 000" 
+                      {...register("phone")}
+                      className={errors.phone ? "border-red-500" : ""}
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Subject</label>
-                    <Input placeholder="What's this about?" />
+                    <label className="block text-sm font-medium mb-2">Subject*</label>
+                    <Input 
+                      placeholder="What's this about?" 
+                      {...register("subject")}
+                      className={errors.subject ? "border-red-500" : ""}
+                    />
+                    {errors.subject && (
+                      <p className="text-sm text-red-500 mt-1">{errors.subject.message}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Message</label>
+                    <label className="block text-sm font-medium mb-2">Message*</label>
                     <Textarea 
                       placeholder="Tell us about your inquiry..."
-                      className="min-h-[120px]"
+                      className={`min-h-[120px] ${errors.message ? "border-red-500" : ""}`}
+                      {...register("message")}
                     />
+                    {errors.message && (
+                      <p className="text-sm text-red-500 mt-1">{errors.message.message}</p>
+                    )}
                   </div>
 
-                  <Button variant="luxury" className="w-full" size="lg">
-                    Send Message
+                  <Button 
+                    variant="luxury" 
+                    className="w-full" 
+                    size="lg"
+                    type="submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               </div>

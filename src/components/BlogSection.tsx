@@ -1,45 +1,35 @@
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 const BlogSection = () => {
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Ultimate Guide to Diani Beach: Hidden Gems & Must-Visit Spots",
-      excerpt: "Discover the pristine beauty of Diani Beach beyond the resorts. From secret snorkeling spots to authentic local cuisine...",
-      author: "Sarah Johnson",
-      date: "2024-01-15",
-      readTime: "8 min read",
-      category: "Travel Guide",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80",
+  const navigate = useNavigate();
+
+  const { data: posts = [] } = useQuery({
+    queryKey: ["blog-posts-featured"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("*")
+        .eq("is_published", true)
+        .order("published_at", { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      return data;
     },
-    {
-      id: 2,
-      title: "Booking Your Perfect Coastal Getaway: Insider Tips",
-      excerpt: "Learn from our hospitality experts about the best times to visit, what amenities to look for, and how to get the best deals...",
-      author: "Michael Chen",
-      date: "2024-01-12",
-      readTime: "6 min read",
-      category: "Booking Tips",
-      image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&q=80",
-    },
-    {
-      id: 3,
-      title: "Sustainable Tourism: Our Commitment to Kenya's Coast",
-      excerpt: "How we're working with local communities to ensure tourism benefits everyone while preserving the natural beauty...",
-      author: "Emma Wilson",
-      date: "2024-01-10",
-      readTime: "5 min read",
-      category: "Sustainability",
-      image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&q=80",
-    },
-  ];
+  });
 
   const categoryColors: Record<string, string> = {
     "Travel Guide": "bg-primary/10 text-primary border-primary/20",
     "Booking Tips": "bg-accent/10 text-accent-foreground border-accent/20",
     "Sustainability": "bg-secondary/10 text-secondary border-secondary/20",
+    "Destinations": "bg-muted text-muted-foreground border-muted-foreground/20",
+    "Culture": "bg-primary/15 text-primary border-primary/30",
   };
 
   return (
@@ -60,7 +50,11 @@ const BlogSection = () => {
             Expert insights, local stories, and insider tips to help you make the most of your coastal adventure
           </p>
           
-          <Button variant="outline" className="group">
+          <Button 
+            variant="outline" 
+            className="group"
+            onClick={() => navigate("/blog")}
+          >
             View All Posts
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -68,15 +62,16 @@ const BlogSection = () => {
 
         {/* Blog Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.map((post) => (
+          {posts.map((post) => (
             <article
               key={post.id}
-              className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:scale-[1.02]"
+              className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:scale-[1.02] cursor-pointer"
+              onClick={() => navigate(`/blog/${post.slug}`)}
             >
               {/* Featured Image */}
               <div className="relative overflow-hidden">
                 <img
-                  src={post.image}
+                  src={post.featured_image}
                   alt={post.title}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
@@ -93,11 +88,11 @@ const BlogSection = () => {
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
                   <div className="flex items-center">
                     <User className="w-3 h-3 mr-1" />
-                    {post.author}
+                    Villa Horizon Team
                   </div>
                   <div className="flex items-center">
                     <Clock className="w-3 h-3 mr-1" />
-                    {post.readTime}
+                    {Math.ceil(post.content.split(' ').length / 200)} min read
                   </div>
                 </div>
 
@@ -114,11 +109,7 @@ const BlogSection = () => {
                 {/* Read More */}
                 <div className="flex items-center justify-between">
                   <time className="text-sm text-muted-foreground">
-                    {new Date(post.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {format(new Date(post.published_at || post.created_at), "MMMM dd, yyyy")}
                   </time>
                   <Button variant="ghost" size="sm" className="group text-primary hover:text-primary">
                     Read More
