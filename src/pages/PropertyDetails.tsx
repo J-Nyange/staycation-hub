@@ -278,7 +278,10 @@ const PropertyDetails = () => {
 
       {/* Modals */}
       <BookingModal
-        property={property as any}
+        property={{
+          ...property,
+          price: property.price_per_night
+        } as any}
         open={isBookingModalOpen}
         onOpenChange={setIsBookingModalOpen}
       />
