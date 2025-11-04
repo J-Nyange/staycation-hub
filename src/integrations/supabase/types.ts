@@ -66,13 +66,16 @@ export type Database = {
         Row: {
           check_in: string
           check_out: string
+          commission_amount: number | null
           created_at: string
           guests: number
           id: string
           payment_status: string | null
+          payout_status: string | null
           property_id: string
           special_requests: string | null
           status: string
+          stripe_payment_intent_id: string | null
           stripe_session_id: string | null
           total_price: number
           updated_at: string
@@ -81,13 +84,16 @@ export type Database = {
         Insert: {
           check_in: string
           check_out: string
+          commission_amount?: number | null
           created_at?: string
           guests: number
           id?: string
           payment_status?: string | null
+          payout_status?: string | null
           property_id: string
           special_requests?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           total_price: number
           updated_at?: string
@@ -96,13 +102,16 @@ export type Database = {
         Update: {
           check_in?: string
           check_out?: string
+          commission_amount?: number | null
           created_at?: string
           guests?: number
           id?: string
           payment_status?: string | null
+          payout_status?: string | null
           property_id?: string
           special_requests?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           total_price?: number
           updated_at?: string
@@ -118,43 +127,132 @@ export type Database = {
           },
         ]
       }
+      legal_agreements: {
+        Row: {
+          accepted_at: string
+          agreement_type: string
+          id: string
+          ip_address: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          agreement_type: string
+          id?: string
+          ip_address?: string | null
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          agreement_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          payment_method: string | null
+          status: string
+          stripe_payment_intent_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          status: string
+          stripe_payment_intent_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          payment_method?: string | null
+          status?: string
+          stripe_payment_intent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          accepted_terms_at: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           date_of_birth: string | null
           first_name: string | null
           id: string
+          is_property_owner: boolean | null
           last_name: string | null
+          pending_payout: number | null
           phone: string | null
           preferred_language: string | null
+          stripe_connect_account_id: string | null
+          stripe_customer_id: string | null
+          total_earnings: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          accepted_terms_at?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           first_name?: string | null
           id?: string
+          is_property_owner?: boolean | null
           last_name?: string | null
+          pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_customer_id?: string | null
+          total_earnings?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          accepted_terms_at?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           first_name?: string | null
           id?: string
+          is_property_owner?: boolean | null
           last_name?: string | null
+          pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_customer_id?: string | null
+          total_earnings?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -165,17 +263,23 @@ export type Database = {
           amenities: string[] | null
           bathrooms: number | null
           bedrooms: number | null
+          cancellation_policy: string | null
           category: string
+          commission_rate: number | null
           created_at: string
           description: string | null
           guests: number
           id: string
           images: string[] | null
+          instant_book: boolean | null
           is_active: boolean | null
+          latitude: number | null
           location: string
+          longitude: number | null
           main_image: string | null
           owner_id: string | null
           price_per_night: number
+          property_type: string | null
           title: string
           updated_at: string
         }
@@ -183,17 +287,23 @@ export type Database = {
           amenities?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
+          cancellation_policy?: string | null
           category: string
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           guests?: number
           id?: string
           images?: string[] | null
+          instant_book?: boolean | null
           is_active?: boolean | null
+          latitude?: number | null
           location: string
+          longitude?: number | null
           main_image?: string | null
           owner_id?: string | null
           price_per_night: number
+          property_type?: string | null
           title: string
           updated_at?: string
         }
@@ -201,48 +311,120 @@ export type Database = {
           amenities?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
+          cancellation_policy?: string | null
           category?: string
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           guests?: number
           id?: string
           images?: string[] | null
+          instant_book?: boolean | null
           is_active?: boolean | null
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           main_image?: string | null
           owner_id?: string | null
           price_per_night?: number
+          property_type?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      property_earnings: {
+        Row: {
+          booking_id: string
+          commission_amount: number
+          created_at: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          payout_date: string | null
+          payout_status: string | null
+          property_id: string
+          stripe_transfer_id: string | null
+        }
+        Insert: {
+          booking_id: string
+          commission_amount: number
+          created_at?: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          payout_date?: string | null
+          payout_status?: string | null
+          property_id: string
+          stripe_transfer_id?: string | null
+        }
+        Update: {
+          booking_id?: string
+          commission_amount?: number
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          payout_date?: string | null
+          payout_status?: string | null
+          property_id?: string
+          stripe_transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_earnings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_earnings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
           booking_id: string | null
           comment: string | null
           created_at: string
+          helpful_count: number | null
           id: string
+          is_verified: boolean | null
+          photos: string[] | null
           property_id: string
           rating: number
+          review_response: string | null
           user_id: string
         }
         Insert: {
           booking_id?: string | null
           comment?: string | null
           created_at?: string
+          helpful_count?: number | null
           id?: string
+          is_verified?: boolean | null
+          photos?: string[] | null
           property_id: string
           rating: number
+          review_response?: string | null
           user_id: string
         }
         Update: {
           booking_id?: string | null
           comment?: string | null
           created_at?: string
+          helpful_count?: number | null
           id?: string
+          is_verified?: boolean | null
+          photos?: string[] | null
           property_id?: string
           rating?: number
+          review_response?: string | null
           user_id?: string
         }
         Relationships: [

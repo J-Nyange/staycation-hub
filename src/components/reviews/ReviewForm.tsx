@@ -1,114 +1,99 @@
-import React, { useState } from 'react';
-import { useAddReview } from '@/hooks/useReviews';
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { Star } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Star, Loader2, BadgeCheck } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ReviewFormProps {
   propertyId: string;
-  onSuccess?: () => void;
+  bookingId?: string;
+  onReviewSubmitted?: () => void;
 }
 
-export const ReviewForm: React.FC<ReviewFormProps> = ({ propertyId, onSuccess }) => {
+export default function ReviewForm({ propertyId, bookingId, onReviewSubmitted }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { mutate: addReview, isPending } = useAddReview();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast({
-        title: 'Authentication required',
-        description: 'You must be logged in to leave a review',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!user || rating === 0) return;
 
-    if (rating === 0) {
-      toast({
-        title: 'Rating required',
-        description: 'Please select a rating before submitting',
-        variant: 'destructive',
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('reviews').insert({
+        user_id: user.id,
+        property_id: propertyId,
+        booking_id: bookingId || null,
+        rating,
+        comment: comment.trim() || null,
+        is_verified: !!bookingId,
       });
-      return;
-    }
 
-    addReview(
-      { propertyId, rating, comment },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Review submitted',
-            description: 'Thank you for your feedback!',
-          });
-          setRating(0);
-          setComment('');
-          if (onSuccess) onSuccess();
-        },
-        onError: (error) => {
-          toast({
-            title: 'Error',
-            description: error.message || 'Failed to submit review',
-            variant: 'destructive',
-          });
-        },
-      }
-    );
+      if (error) throw error;
+      toast({ title: "Review Submitted!", description: "Thank you for your feedback!" });
+      setRating(0);
+      setComment('');
+      if (onReviewSubmitted) onReviewSubmitted();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Submission Failed", description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (!user) {
-    return (
-      <div className="p-4 bg-muted/50 rounded-md">
-        <p className="text-sm text-center">Please sign in to leave a review</p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h3 className="text-lg font-semibold">Write a Review</h3>
-      
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setRating(star)}
-            onMouseEnter={() => setHoveredRating(star)}
-            onMouseLeave={() => setHoveredRating(0)}
-            className="focus:outline-none"
-          >
-            <Star
-              className={`h-6 w-6 ${
-                star <= (hoveredRating || rating)
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-300'
-              }`}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Write a Review
+          {bookingId && <BadgeCheck className="h-5 w-5 text-green-600" />}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label>Your Rating</Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                >
+                  <Star className={`h-8 w-8 ${star <= (hoveredRating || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="comment">Your Review</Label>
+            <Textarea
+              id="comment"
+              placeholder="Share your experience..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={5}
+              maxLength={1000}
             />
-          </button>
-        ))}
-        <span className="ml-2 text-sm text-muted-foreground">
-          {rating ? `${rating} star${rating !== 1 ? 's' : ''}` : 'Select rating'}
-        </span>
-      </div>
+          </div>
 
-      <Textarea
-        placeholder="Share your experience with this property (optional)"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        className="min-h-[100px]"
-      />
-
-      <Button type="submit" disabled={isPending || rating === 0}>
-        {isPending ? 'Submitting...' : 'Submit Review'}
-      </Button>
-    </form>
+          <Button type="submit" className="w-full" disabled={isSubmitting || rating === 0}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit Review
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
-};
+}

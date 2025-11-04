@@ -17,6 +17,7 @@ import BookingHistory from "./pages/BookingHistory";
 import MyProperties from "./pages/MyProperties";
 import PropertyDetails from "./pages/PropertyDetails";
 import BlogPost from "./pages/BlogPost";
+import BookingConfirmation from "./pages/BookingConfirmation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
