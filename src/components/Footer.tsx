@@ -17,10 +17,9 @@ const Footer = () => {
   ];
 
   const legal = [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Cancellation Policy", href: "/cancellation" },
-    { name: "Cookie Policy", href: "/cookies" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms of Service", href: "/terms-of-service" },
+    { name: "Cancellation Policy", href: "/cancellation-policy" },
   ];
 
   const locations = [

@@ -117,6 +117,10 @@ const Navbar = () => {
                       <Home className="w-4 h-4 mr-2" />
                       My Properties
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/owner-dashboard')}>
+                      <Home className="w-4 h-4 mr-2" />
+                      Owner Dashboard
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/bookings')}>
                       <Calendar className="w-4 h-4 mr-2" />
                       Booking History

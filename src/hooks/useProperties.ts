@@ -17,8 +17,16 @@ export interface Property {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  owner_id?: string | null;
   rating?: number;
   review_count?: number;
+  // New fields from Phase 1-5
+  commission_rate?: number;
+  cancellation_policy?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  property_type?: string | null;
+  instant_book?: boolean;
 }
 
 export const useProperties = (category?: string) => {

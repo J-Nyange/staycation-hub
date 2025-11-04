@@ -15,11 +15,24 @@ export default function ReviewList({ propertyId }: ReviewListProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reviews')
-        .select('*, profiles:user_id (first_name, last_name)')
+        .select('*')
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data;
+      
+      // Fetch profile data separately
+      const reviewsWithProfiles = await Promise.all(
+        (data || []).map(async (review) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', review.user_id)
+            .single();
+          return { ...review, profiles: profile };
+        })
+      );
+      
+      return reviewsWithProfiles;
     },
   });
 

@@ -15,8 +15,8 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import BookingModal from "@/components/BookingModal";
 import AuthModal from "@/components/AuthModal";
-import { ReviewList } from "@/components/reviews/ReviewList";
-import { ReviewForm } from "@/components/reviews/ReviewForm";
+import ReviewList from "@/components/reviews/ReviewList";
+import ReviewForm from "@/components/reviews/ReviewForm";
 import ImageCarousel from "@/components/ImageCarousel";
 
 const PropertyDetails = () => {
