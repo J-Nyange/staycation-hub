@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +60,12 @@ const Contacts = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Contact Us"
+        description="Get in touch with Villa Horizon Kenya. Contact our support team for booking assistance, property inquiries, or general questions about our coastal accommodations."
+        keywords="contact Villa Horizon, customer support, booking help, property inquiries, Mombasa contact"
+        url={window.location.href}
+      />
       <Navbar />
       <main>
         {/* Hero Section */}

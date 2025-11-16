@@ -1,10 +1,28 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { MapPin, Users, Award, Heart } from "lucide-react";
+import { generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const About = () => {
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "About", url: "https://villahorizon.com/about" },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="About Villa Horizon Kenya"
+        description="Learn about Villa Horizon, Kenya's premier coastal property rental platform. Connecting travelers with luxury villas, homestays, and apartments since 2020."
+        keywords="about Villa Horizon, Kenya property rentals, coastal accommodations Kenya, vacation rental platform"
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       <main>
         {/* Hero Section */}

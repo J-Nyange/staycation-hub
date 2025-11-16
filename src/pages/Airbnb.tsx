@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import PropertyCard from "@/components/PropertyCard";
 import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import FilterSort from "@/components/FilterSort";
+import { generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const Airbnb = () => {
   const { data: airbnbProperties = [], isLoading, error } = useProperties('airbnb');
@@ -24,8 +26,25 @@ const Airbnb = () => {
     );
   }
 
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "Airbnb Apartments", url: "https://villahorizon.com/airbnb" },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Airbnb Apartments in Kenya"
+        description="Comfortable, well-equipped apartments perfect for short stays and extended visits. Experience local living with modern amenities along Kenya's coast."
+        keywords="Airbnb Kenya, Kenya apartments, coastal apartments Kenya, self-catering Kenya, vacation apartments Mombasa, Diani apartments"
+        image="/airbnb-interior.jpg"
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       {/* Hero Section */}
