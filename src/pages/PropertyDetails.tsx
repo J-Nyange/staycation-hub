@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,6 +19,7 @@ import AuthModal from "@/components/AuthModal";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import ImageCarousel from "@/components/ImageCarousel";
+import { generatePropertySchema, generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,8 +110,41 @@ const PropertyDetails = () => {
     homestay: "Homestay",
   };
 
+  const propertySchema = generatePropertySchema({
+    id: property.id,
+    title: property.title,
+    description: property.description || "",
+    image: property.main_image || "",
+    pricePerNight: property.price_per_night,
+    location: property.location,
+    amenities: property.amenities || [],
+    latitude: property.latitude || undefined,
+    longitude: property.longitude || undefined,
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: categoryLabels[property.category as keyof typeof categoryLabels], url: `https://villahorizon.com/${property.category}` },
+      { name: property.title, url: `https://villahorizon.com/property/${property.id}` },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${property.title} - ${property.location}`}
+        description={property.description || `Book ${property.title} in ${property.location}. ${property.guests} guests, ${property.bedrooms} bedrooms. Starting from KES ${property.price_per_night}/night.`}
+        keywords={`${property.location}, ${property.category}, ${property.property_type}, Kenya accommodation, ${property.amenities?.join(", ")}`}
+        image={property.main_image || ""}
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(propertySchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       <main className="container mx-auto px-4 lg:px-8 py-8">

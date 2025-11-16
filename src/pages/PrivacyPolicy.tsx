@@ -1,10 +1,17 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy"
+        description="Learn how Villa Horizon Kenya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices."
+        keywords="privacy policy, data protection, GDPR, personal information, data security"
+        url={window.location.href}
+      />
       <Navbar />
       <main className="container mx-auto px-4 py-16">
         <Card className="max-w-4xl mx-auto">

@@ -3,11 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, ArrowLeft, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import { generateBlogPostSchema, generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -70,8 +72,42 @@ const BlogPost = () => {
 
   const authorName = 'Villa Horizon Team';
 
+  const blogSchema = generateBlogPostSchema({
+    title: post.title,
+    description: post.excerpt || "",
+    image: post.featured_image || "",
+    datePublished: post.published_at || "",
+    dateModified: post.updated_at,
+    authorName,
+    url: window.location.href,
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "Blog", url: "https://villahorizon.com/blog" },
+      { name: post.title, url: window.location.href },
+    ],
+  });
+
+  const readTime = Math.ceil(post.content.split(' ').length / 200);
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={post.title}
+        description={post.excerpt || post.title}
+        keywords={`${post.category}, ${post.tags?.join(", ")}, Kenya travel, coastal Kenya`}
+        image={post.featured_image || ""}
+        url={window.location.href}
+        type="article"
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(blogSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       <main className="container mx-auto px-4 lg:px-8 py-8">
@@ -132,7 +168,7 @@ const BlogPost = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>{Math.ceil(post.content.split(' ').length / 200)} min read</span>
+                <span>{readTime} min read</span>
               </div>
             </div>
           </header>

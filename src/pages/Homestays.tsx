@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import PropertyCard from "@/components/PropertyCard";
 import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import FilterSort from "@/components/FilterSort";
+import { generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const Homestays = () => {
   const { data: homestayProperties = [], isLoading, error } = useProperties('homestay');
@@ -24,8 +26,25 @@ const Homestays = () => {
     );
   }
 
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "Homestays", url: "https://villahorizon.com/homestays" },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Authentic Homestays in Kenya"
+        description="Experience genuine Kenyan hospitality in our carefully selected homestays. Connect with local culture and enjoy warm, family-friendly accommodations along the coast."
+        keywords="homestays Kenya, authentic Kenya accommodation, local homestays, family-friendly Kenya, cultural stays Mombasa, traditional Kenyan homes"
+        image="/homestay-cottage.jpg"
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       {/* Hero Section */}

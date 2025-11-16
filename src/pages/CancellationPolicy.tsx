@@ -1,11 +1,18 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export default function CancellationPolicy() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Cancellation & Refund Policy"
+        description="Understand Villa Horizon's flexible, moderate, and strict cancellation policies. Learn about refund processing, booking changes, and our guest protection policies."
+        keywords="cancellation policy, refund policy, booking cancellation, flexible cancellation, Villa Horizon refunds"
+        url={window.location.href}
+      />
       <Navbar />
       <main className="container mx-auto px-4 py-16">
         <Card className="max-w-4xl mx-auto">

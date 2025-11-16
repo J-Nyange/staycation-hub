@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const Blog = () => {
   const navigate = useNavigate();
@@ -44,8 +46,25 @@ const Blog = () => {
     "Culture": "bg-primary/15 text-primary border-primary/30",
   };
 
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "Blog", url: "https://villahorizon.com/blog" },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Travel Stories & Tips"
+        description="Discover insider secrets, local stories, and expert advice to make your coastal Kenya experience unforgettable. Explore our travel guides and booking tips."
+        keywords="Kenya travel tips, coastal Kenya guide, Diani travel blog, Mombasa tourism, Watamu travel, Kenya vacation planning"
+        image="/hero-villa.jpg"
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       {/* Hero Section */}

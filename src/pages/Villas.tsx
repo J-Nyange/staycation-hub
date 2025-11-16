@@ -1,10 +1,12 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import PropertyCard from "@/components/PropertyCard";
 import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import FilterSort from "@/components/FilterSort";
+import { generateBreadcrumbSchema } from "@/lib/structuredData";
 
 const Villas = () => {
   const { data: villaProperties = [], isLoading, error } = useProperties('villa');
@@ -24,8 +26,25 @@ const Villas = () => {
     );
   }
 
+  const breadcrumbSchema = generateBreadcrumbSchema({
+    items: [
+      { name: "Home", url: "https://villahorizon.com" },
+      { name: "Luxury Villas", url: "https://villahorizon.com/villas" },
+    ],
+  });
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Luxury Villas in Kenya"
+        description="Experience ultimate luxury in our exclusive coastal villas. Private pools, breathtaking ocean views, and world-class amenities along Kenya's stunning coastline."
+        keywords="luxury villas Kenya, Kenya beach villas, private villas Diani, exclusive villas Mombasa, luxury accommodation Kenya, oceanfront villas"
+        image="/hero-villa.jpg"
+        url={window.location.href}
+      />
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
+      </script>
       <Navbar />
       
       {/* Hero Section */}
