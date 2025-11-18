@@ -7,7 +7,9 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieBanner from "@/components/CookieBanner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ComparisonBar from "@/components/ComparisonBar";
 import Index from "./pages/Index";
+import PropertyComparison from "./pages/PropertyComparison";
 import Airbnb from "./pages/Airbnb";
 import Villas from "./pages/Villas";
 import Homestays from "./pages/Homestays";
@@ -39,6 +41,7 @@ const App = () => (
           <BrowserRouter>
             <CookieBanner />
             <PWAInstallPrompt />
+            <ComparisonBar />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/airbnb" element={<Airbnb />} />
@@ -55,6 +58,7 @@ const App = () => (
               <Route path="/my-properties" element={<MyProperties />} />
               <Route path="/owner-dashboard" element={<OwnerDashboard />} />
               <Route path="/properties/:id" element={<PropertyDetails />} />
+              <Route path="/compare" element={<PropertyComparison />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Star, Users, Wifi, Car, Eye } from "lucide-react";
+import { Heart, MapPin, Star, Users, Wifi, Car, Eye, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
+import { useComparison } from "@/hooks/useComparison";
 import AuthModal from "@/components/AuthModal";
 import ImageCarousel from "@/components/ImageCarousel";
+import { useToast } from "@/hooks/use-toast";
 
 interface PropertyCardProps {
   id: string;
@@ -39,8 +41,10 @@ const PropertyCard = (property: PropertyCardProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(property.id);
+  const { addToComparison, removeFromComparison, isInComparison } = useComparison();
 
   // Use database properties with fallbacks for compatibility
   const price = property.price || property.price_per_night;
@@ -50,6 +54,8 @@ const PropertyCard = (property: PropertyCardProps) => {
   const rating = property.rating || 0;
   const reviews = property.reviews || 0;
   const isLiked = isInWishlist(property.id);
+  const inComparison = isInComparison(property.id);
+
   const handleWishlistToggle = () => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -64,7 +70,37 @@ const PropertyCard = (property: PropertyCardProps) => {
   };
 
   const handleDetailsClick = () => {
-    navigate(`/property/${property.id}`);
+    navigate(`/properties/${property.id}`);
+  };
+
+  const handleComparisonToggle = () => {
+    if (inComparison) {
+      removeFromComparison(property.id);
+      toast({
+        title: "Removed from comparison",
+        description: `${property.title} removed from comparison list`,
+      });
+    } else {
+      const comparisonProperty = {
+        id: property.id,
+        title: property.title,
+        location: property.location,
+        price_per_night: price || 0,
+        guests: property.guests,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        rating,
+        reviews,
+        amenities: property.amenities,
+        main_image: images[0],
+        category: property.category,
+      };
+      addToComparison(comparisonProperty);
+      toast({
+        title: "Added to comparison",
+        description: `${property.title} added to comparison list`,
+      });
+    }
   };
 
   const categoryColors = {
@@ -158,19 +194,30 @@ const PropertyCard = (property: PropertyCardProps) => {
           </div>
 
           {/* Price & CTA */}
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-2xl font-bold text-foreground">${price}</span>
-              <span className="text-muted-foreground text-sm ml-1">/ night</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-2xl font-bold text-foreground">${price}</span>
+                <span className="text-muted-foreground text-sm ml-1">/ night</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="group"
+                onClick={handleDetailsClick}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </Button>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant={inComparison ? "secondary" : "outline"}
               size="sm"
-              className="group"
-              onClick={handleDetailsClick}
+              className="w-full"
+              onClick={handleComparisonToggle}
             >
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
+              <Scale className="w-4 h-4 mr-2" />
+              {inComparison ? "Remove from Compare" : "Add to Compare"}
             </Button>
           </div>
         </div>
