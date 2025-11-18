@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -21,8 +22,9 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Star } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
+import { useAdvancedSearch, AdvancedSearchParams } from "@/hooks/useAdvancedSearch";
 
 export type SortOption = "default" | "price-low-high" | "price-high-low";
 
@@ -31,6 +33,11 @@ export interface FilterOptions {
   guests: number;
   location: string;
   amenities: string[];
+  propertyType: string[];
+  instantBook: boolean;
+  minRating: number;
+  bedroomsMin: number;
+  bathroomsMin: number;
   sortBy: SortOption;
 }
 
@@ -59,62 +66,56 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
     guests: 1,
     location: "",
     amenities: [],
+    propertyType: [],
+    instantBook: false,
+    minRating: 0,
+    bedroomsMin: 0,
+    bathroomsMin: 0,
     sortBy: "default",
   });
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Apply filters and sorting
+  // Get all unique property types
+  const allPropertyTypes = [...new Set(properties.map(p => p.category))];
+
+  // Build search params from filters
+  const searchParams: AdvancedSearchParams = {
+    location: filters.location || undefined,
+    guests: filters.guests > 1 ? filters.guests : undefined,
+    priceRange: filters.priceRange,
+    propertyType: filters.propertyType.length > 0 ? filters.propertyType : undefined,
+    amenities: filters.amenities.length > 0 ? filters.amenities : undefined,
+    instantBook: filters.instantBook || undefined,
+    minRating: filters.minRating > 0 ? filters.minRating : undefined,
+    bedroomsMin: filters.bedroomsMin > 0 ? filters.bedroomsMin : undefined,
+  };
+
+  // Use advanced search hook
+  const { data: searchResults, isLoading } = useAdvancedSearch(searchParams);
+
+  // Apply sorting to search results
   useEffect(() => {
-    let filteredResults = [...properties];
-    
-    // Filter by price range
-    filteredResults = filteredResults.filter(
-      (property) => 
-        property.price_per_night >= filters.priceRange[0] && 
-        property.price_per_night <= filters.priceRange[1]
-    );
-    
-    // Filter by guests
-    if (filters.guests > 1) {
-      filteredResults = filteredResults.filter(
-        (property) => property.guests >= filters.guests
-      );
+    if (!searchResults) {
+      onFilterChange([]);
+      return;
     }
+
+    let sortedResults = [...searchResults];
     
-    // Filter by location
-    if (filters.location) {
-      filteredResults = filteredResults.filter(
-        (property) => property.location === filters.location
-      );
-    }
-    
-    // Filter by amenities
-    if (filters.amenities.length > 0) {
-      filteredResults = filteredResults.filter((property) => {
-        return filters.amenities.every(amenity => 
-          property.amenities && property.amenities.includes(amenity)
-        );
-      });
-    }
-    
-    // Apply sorting
     switch (filters.sortBy) {
       case "price-low-high":
-        filteredResults.sort((a, b) => a.price_per_night - b.price_per_night);
+        sortedResults.sort((a, b) => a.price_per_night - b.price_per_night);
         break;
       case "price-high-low":
-        filteredResults.sort((a, b) => b.price_per_night - a.price_per_night);
-        break;
-      // Removing rating sort option as it's not available in the Property interface
+        sortedResults.sort((a, b) => b.price_per_night - a.price_per_night);
         break;
       default:
-        // Default sorting (could be by creation date or featured status)
         break;
     }
     
-    onFilterChange(filteredResults);
-  }, [filters, properties, onFilterChange]);
+    onFilterChange(sortedResults);
+  }, [searchResults, filters.sortBy, onFilterChange]);
 
   const handlePriceChange = (value: number[]) => {
     setFilters(prev => ({ ...prev, priceRange: [value[0], value[1]] }));
@@ -142,12 +143,43 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
     setFilters(prev => ({ ...prev, sortBy: value as SortOption }));
   };
 
+  const handlePropertyTypeToggle = (type: string) => {
+    setFilters(prev => {
+      const updatedTypes = prev.propertyType.includes(type)
+        ? prev.propertyType.filter(t => t !== type)
+        : [...prev.propertyType, type];
+      
+      return { ...prev, propertyType: updatedTypes };
+    });
+  };
+
+  const handleInstantBookToggle = (checked: boolean) => {
+    setFilters(prev => ({ ...prev, instantBook: checked }));
+  };
+
+  const handleMinRatingChange = (value: string) => {
+    setFilters(prev => ({ ...prev, minRating: parseFloat(value) }));
+  };
+
+  const handleBedroomsChange = (value: string) => {
+    setFilters(prev => ({ ...prev, bedroomsMin: parseInt(value) }));
+  };
+
+  const handleBathroomsChange = (value: string) => {
+    setFilters(prev => ({ ...prev, bathroomsMin: parseInt(value) }));
+  };
+
   const handleReset = () => {
     setFilters({
       priceRange: [minPrice, maxPrice],
       guests: 1,
       location: "",
       amenities: [],
+      propertyType: [],
+      instantBook: false,
+      minRating: 0,
+      bedroomsMin: 0,
+      bathroomsMin: 0,
       sortBy: "default",
     });
   };
@@ -255,6 +287,119 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
                   </div>
                 </div>
                 
+                {/* Property Type Filter */}
+                <div className="space-y-4">
+                  <h3 className="font-medium">Property Type</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {allPropertyTypes.map(type => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`type-${type}`} 
+                          checked={filters.propertyType.includes(type)}
+                          onCheckedChange={() => handlePropertyTypeToggle(type)}
+                        />
+                        <label 
+                          htmlFor={`type-${type}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize"
+                        >
+                          {type}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Instant Book Toggle */}
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="instant-book">Instant Book</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Book without waiting for host approval
+                    </p>
+                  </div>
+                  <Switch
+                    id="instant-book"
+                    checked={filters.instantBook}
+                    onCheckedChange={handleInstantBookToggle}
+                  />
+                </div>
+
+                {/* Minimum Rating Filter */}
+                <div className="space-y-4">
+                  <Label htmlFor="min-rating">Minimum Rating</Label>
+                  <Select 
+                    value={filters.minRating.toString()} 
+                    onValueChange={handleMinRatingChange}
+                  >
+                    <SelectTrigger id="min-rating">
+                      <SelectValue placeholder="Any rating" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Any rating</SelectItem>
+                      <SelectItem value="3">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          3+ Stars
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          4+ Stars
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="4.5">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          4.5+ Stars
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bedrooms Filter */}
+                <div className="space-y-4">
+                  <Label htmlFor="bedrooms">Minimum Bedrooms</Label>
+                  <Select 
+                    value={filters.bedroomsMin.toString()} 
+                    onValueChange={handleBedroomsChange}
+                  >
+                    <SelectTrigger id="bedrooms">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Any</SelectItem>
+                      {[1, 2, 3, 4, 5, 6].map(num => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num}+ {num === 1 ? 'Bedroom' : 'Bedrooms'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bathrooms Filter */}
+                <div className="space-y-4">
+                  <Label htmlFor="bathrooms">Minimum Bathrooms</Label>
+                  <Select 
+                    value={filters.bathroomsMin.toString()} 
+                    onValueChange={handleBathroomsChange}
+                  >
+                    <SelectTrigger id="bathrooms">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Any</SelectItem>
+                      {[1, 2, 3, 4, 5].map(num => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num}+ {num === 1 ? 'Bathroom' : 'Bathrooms'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 {/* Sort Options */}
                 <div className="space-y-4">
                   <Label htmlFor="sort">Sort By</Label>
@@ -307,10 +452,15 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
         
         {/* Active Filters Summary */}
         <div className="text-sm text-muted-foreground">
-          {properties.length} properties
+          {isLoading ? 'Loading...' : `${searchResults?.length || 0} properties`}
           {filters.location && ` • ${filters.location}`}
           {filters.guests > 1 && ` • ${filters.guests} guests+`}
+          {filters.propertyType.length > 0 && ` • ${filters.propertyType.length} types`}
           {filters.amenities.length > 0 && ` • ${filters.amenities.length} amenities`}
+          {filters.instantBook && ` • Instant book`}
+          {filters.minRating > 0 && ` • ${filters.minRating}+ stars`}
+          {filters.bedroomsMin > 0 && ` • ${filters.bedroomsMin}+ beds`}
+          {filters.bathroomsMin > 0 && ` • ${filters.bathroomsMin}+ baths`}
         </div>
       </div>
     </div>
