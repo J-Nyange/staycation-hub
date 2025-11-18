@@ -2,12 +2,14 @@
   "name": "Villa Horizon Kenya",
   "short_name": "VillaHorizon",
   "description": "Discover coastal Kenya properties - Airbnb apartments, luxury villas, and cozy homestays",
-  "theme_color": "#0EA5E9",
+  "theme_color": "#60A5FA",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
   "start_url": "/",
+  "categories": ["travel", "lifestyle", "business"],
+  "screenshots": [],
   "icons": [
     {
       "src": "/placeholder.svg",
