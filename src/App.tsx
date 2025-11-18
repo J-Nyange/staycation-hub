@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieBanner from "@/components/CookieBanner";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Index from "./pages/Index";
 import Airbnb from "./pages/Airbnb";
 import Villas from "./pages/Villas";
@@ -37,6 +38,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <CookieBanner />
+            <PWAInstallPrompt />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/airbnb" element={<Airbnb />} />
