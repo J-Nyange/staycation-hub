@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "@/contexts/AuthContext";
+import CookieBanner from "@/components/CookieBanner";
 import Index from "./pages/Index";
 import Airbnb from "./pages/Airbnb";
 import Villas from "./pages/Villas";
@@ -34,6 +35,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <CookieBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

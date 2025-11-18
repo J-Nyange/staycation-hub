@@ -12,7 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Property } from '@/hooks/useProperties';
 import { supabase } from '@/integrations/supabase/client';
 import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Loader2, CreditCard, Info } from 'lucide-react';
+import { CalendarIcon, Loader2, CreditCard, Info, Shield, AlertCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -35,6 +38,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const [currentTab, setCurrentTab] = useState<'details' | 'payment'>('details');
   const [bookingId, setBookingId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -122,6 +126,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setCurrentTab('details');
     setBookingId('');
     setClientSecret('');
+    setAcceptedTerms(false);
   };
 
   useEffect(() => {
@@ -242,10 +247,67 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 </div>
               )}
 
+              {property.cancellation_policy && (
+                <Alert className="border-primary/20">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    <strong className="font-semibold">Cancellation Policy: </strong>
+                    {property.cancellation_policy === 'flexible' && (
+                      <span>Full refund if canceled 24 hours before check-in. Cancel within 24 hours for 50% refund.</span>
+                    )}
+                    {property.cancellation_policy === 'moderate' && (
+                      <span>Full refund if canceled 7 days before check-in. Cancel within 7 days for 50% refund.</span>
+                    )}
+                    {property.cancellation_policy === 'strict' && (
+                      <span>50% refund if canceled 30 days before check-in. No refund within 30 days of check-in.</span>
+                    )}
+                    {' '}
+                    <Link to="/cancellation-policy" className="text-primary hover:underline">
+                      Learn more
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50 border border-border">
+                <Checkbox 
+                  id="terms" 
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                  className="mt-1"
+                />
+                <label 
+                  htmlFor="terms" 
+                  className="text-sm leading-relaxed cursor-pointer"
+                >
+                  I agree to the{' '}
+                  <Link to="/terms-of-service" target="_blank" className="text-primary hover:underline font-medium">
+                    Terms of Service
+                  </Link>
+                  ,{' '}
+                  <Link to="/cancellation-policy" target="_blank" className="text-primary hover:underline font-medium">
+                    Cancellation Policy
+                  </Link>
+                  , and{' '}
+                  <Link to="/privacy-policy" target="_blank" className="text-primary hover:underline font-medium">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
+              {!acceptedTerms && checkIn && checkOut && (
+                <Alert variant="destructive" className="border-destructive/50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Please accept the terms and conditions to continue with your booking.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!checkIn || !checkOut || isLoading}
+                disabled={!checkIn || !checkOut || !acceptedTerms || isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Continue to Payment
