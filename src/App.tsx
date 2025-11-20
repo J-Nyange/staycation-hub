@@ -28,6 +28,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationPolicy from "./pages/CancellationPolicy";
 import NotFound from "./pages/NotFound";
+import MapView from "./pages/MapView";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/owner-dashboard" element={<OwnerDashboard />} />
               <Route path="/properties/:id" element={<PropertyDetails />} />
               <Route path="/compare" element={<PropertyComparison />} />
+              <Route path="/map" element={<MapView />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
