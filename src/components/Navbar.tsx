@@ -32,6 +32,7 @@ const Navbar = () => {
 
   const navigation = [
     { name: "Home", href: "/" },
+    { name: "Map View", href: "/map" },
     { name: "About", href: "/about" },
     { name: "Homestays", href: "/homestays" },
     { name: "Airbnb", href: "/airbnb" },
