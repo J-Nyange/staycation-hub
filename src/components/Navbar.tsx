@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import AuthModal from "@/components/AuthModal";
 import AddPropertyModal from "@/components/AddPropertyModal";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -90,6 +91,8 @@ const Navbar = () => {
             >
               <Search className="w-4 h-4" />
             </Button>
+            
+            {user && <NotificationBell />}
             
             {user ? (
               <>
