@@ -41,6 +41,13 @@ export type Database = {
             foreignKeyName: "blocked_dates_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "blocked_dates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -154,6 +161,13 @@ export type Database = {
             foreignKeyName: "bookings_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -194,6 +208,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "bookings"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "conversations_property_id_fkey"
@@ -530,6 +551,13 @@ export type Database = {
             foreignKeyName: "property_earnings_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_earnings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -587,6 +615,13 @@ export type Database = {
             foreignKeyName: "reviews_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -622,6 +657,13 @@ export type Database = {
             foreignKeyName: "seasonal_pricing_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "seasonal_pricing_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -651,6 +693,13 @@ export type Database = {
             foreignKeyName: "wishlists_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_analytics"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "wishlists_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -658,10 +707,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      owner_analytics: {
+        Row: {
+          average_rating: number | null
+          avg_booking_value: number | null
+          avg_stay_duration: number | null
+          booking_success_rate: number | null
+          cancelled_bookings: number | null
+          confirmed_bookings: number | null
+          owner_id: string | null
+          pending_bookings: number | null
+          property_id: string | null
+          property_title: string | null
+          review_count: number | null
+          total_bookings: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_revenue_by_month: {
+        Args: { end_date: string; owner_uuid: string; start_date: string }
+        Returns: {
+          booking_count: number
+          month: string
+          revenue: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
