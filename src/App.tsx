@@ -30,6 +30,8 @@ import CancellationPolicy from "./pages/CancellationPolicy";
 import NotFound from "./pages/NotFound";
 import MapView from "./pages/MapView";
 import Notifications from "./pages/Notifications";
+import OwnerBookings from "./pages/OwnerBookings";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +65,8 @@ const App = () => (
               <Route path="/compare" element={<PropertyComparison />} />
               <Route path="/map" element={<MapView />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/owner-bookings" element={<OwnerBookings />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />

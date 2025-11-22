@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,9 +8,11 @@ import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, DollarSign, ArrowLeft } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, ArrowLeft, XCircle, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CancellationModal } from "@/components/booking/CancellationModal";
+import { ModificationModal } from "@/components/booking/ModificationModal";
 
 interface Booking {
   id: string;
@@ -20,18 +23,24 @@ interface Booking {
   status: string;
   payment_status: string;
   created_at: string;
+  refund_amount?: number;
+  refund_status?: string;
+  cancellation_reason?: string;
   properties: {
     id: string;
     title: string;
     location: string;
     main_image: string;
     category: string;
+    cancellation_policy: string;
   };
 }
 
 const BookingHistory = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
+  const [modifyingBooking, setModifyingBooking] = useState<Booking | null>(null);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings', user?.id],
@@ -47,7 +56,8 @@ const BookingHistory = () => {
             title,
             location,
             main_image,
-            category
+            category,
+            cancellation_policy
           )
         `)
         .eq('user_id', user.id)
@@ -202,6 +212,42 @@ const BookingHistory = () => {
                             Payment: {booking.payment_status}
                           </Badge>
                         </div>
+
+                        {booking.status === "confirmed" && new Date(booking.check_in) > new Date() && (
+                          <div className="flex gap-2 mt-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setModifyingBooking(booking)}
+                              className="flex-1"
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modify
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              onClick={() => setCancellingBooking(booking)}
+                              className="flex-1"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
+
+                        {booking.status === "cancelled" && booking.refund_amount && booking.refund_amount > 0 && (
+                          <div className="mt-4 p-3 bg-muted rounded-lg">
+                            <p className="text-sm">
+                              <span className="font-medium">Refund:</span> ${booking.refund_amount.toFixed(2)} ({booking.refund_status})
+                            </p>
+                            {booking.cancellation_reason && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Reason: {booking.cancellation_reason}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -220,6 +266,23 @@ const BookingHistory = () => {
           )}
         </div>
       </main>
+
+      {cancellingBooking && (
+        <CancellationModal
+          open={!!cancellingBooking}
+          onOpenChange={(open) => !open && setCancellingBooking(null)}
+          booking={cancellingBooking}
+        />
+      )}
+
+      {modifyingBooking && (
+        <ModificationModal
+          open={!!modifyingBooking}
+          onOpenChange={(open) => !open && setModifyingBooking(null)}
+          booking={modifyingBooking}
+        />
+      )}
+
       <Footer />
     </>
   );
