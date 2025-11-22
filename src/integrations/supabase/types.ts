@@ -101,17 +101,85 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_modifications: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          modification_type: string
+          new_check_in: string | null
+          new_check_out: string | null
+          new_guests: number | null
+          old_check_in: string | null
+          old_check_out: string | null
+          old_guests: number | null
+          reason: string | null
+          requested_by: string
+          responded_at: string | null
+          response: string | null
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          modification_type: string
+          new_check_in?: string | null
+          new_check_out?: string | null
+          new_guests?: number | null
+          old_check_in?: string | null
+          old_check_out?: string | null
+          old_guests?: number | null
+          reason?: string | null
+          requested_by: string
+          responded_at?: string | null
+          response?: string | null
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          modification_type?: string
+          new_check_in?: string | null
+          new_check_out?: string | null
+          new_guests?: number | null
+          old_check_in?: string | null
+          old_check_out?: string | null
+          old_guests?: number | null
+          reason?: string | null
+          requested_by?: string
+          responded_at?: string | null
+          response?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_modifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           check_in: string
           check_out: string
           commission_amount: number | null
           created_at: string
           guests: number
           id: string
+          modification_count: number | null
           payment_status: string | null
           payout_status: string | null
           property_id: string
+          refund_amount: number | null
+          refund_status: string | null
           special_requests: string | null
           status: string
           stripe_payment_intent_id: string | null
@@ -121,15 +189,21 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in: string
           check_out: string
           commission_amount?: number | null
           created_at?: string
           guests: number
           id?: string
+          modification_count?: number | null
           payment_status?: string | null
           payout_status?: string | null
           property_id: string
+          refund_amount?: number | null
+          refund_status?: string | null
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -139,15 +213,21 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in?: string
           check_out?: string
           commission_amount?: number | null
           created_at?: string
           guests?: number
           id?: string
+          modification_count?: number | null
           payment_status?: string | null
           payout_status?: string | null
           property_id?: string
+          refund_amount?: number | null
+          refund_status?: string | null
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
