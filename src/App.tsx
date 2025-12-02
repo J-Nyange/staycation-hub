@@ -51,7 +51,13 @@ const SupabaseTokenSync = () => {
   useEffect(() => {
     setTokenProvider(async () => {
       if (!session) return null;
-      return await session.getToken({ template: 'supabase' });
+      try {
+        const token = await session.getToken({ template: 'supabase' });
+        return token;
+      } catch (error) {
+        console.error('Failed to get Supabase token from Clerk:', error);
+        return null;
+      }
     });
   }, [session]);
 

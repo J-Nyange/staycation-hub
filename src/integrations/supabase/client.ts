@@ -15,21 +15,26 @@ export const setTokenProvider = (provider: () => Promise<string | null>) => {
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: false, // We're using Clerk for auth
+    autoRefreshToken: false,
   },
   global: {
     fetch: async (url, options: RequestInit = {}) => {
-      const token = await tokenProvider();
+      let token: string | null = null;
+      
+      try {
+        token = await tokenProvider();
+      } catch (error) {
+        console.error('Error getting Clerk token:', error);
+      }
+      
       const headers = new Headers(options?.headers);
       
       // CRITICAL: Always include the Supabase anon key
       headers.set('apikey', SUPABASE_PUBLISHABLE_KEY);
       
-      // Add Clerk JWT if available (for authenticated requests)
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
+      // Always set Authorization header - use Clerk token if available, otherwise use anon key
+      headers.set('Authorization', `Bearer ${token || SUPABASE_PUBLISHABLE_KEY}`);
       
       return fetch(url, {
         ...options,
