@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, Users, Wifi, Car, Eye, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import { useComparison } from "@/hooks/useComparison";
-import AuthModal from "@/components/AuthModal";
 import ImageCarousel from "@/components/ImageCarousel";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,9 +37,9 @@ interface PropertyCardProps {
 }
 
 const PropertyCard = (property: PropertyCardProps) => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { openSignIn } = useClerk();
   const { toast } = useToast();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(property.id);
@@ -58,7 +57,7 @@ const PropertyCard = (property: PropertyCardProps) => {
 
   const handleWishlistToggle = () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      openSignIn();
       return;
     }
 
@@ -222,13 +221,6 @@ const PropertyCard = (property: PropertyCardProps) => {
           </div>
         </div>
       </div>
-
-      {/* Auth Modal */}
-      <AuthModal 
-        trigger={<></>}
-        open={isAuthModalOpen}
-        onOpenChange={setIsAuthModalOpen}
-      />
     </>
   );
 };

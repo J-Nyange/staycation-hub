@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -9,7 +9,7 @@ import { MessageThread } from "@/components/messaging/MessageThread";
 import { useConversations } from "@/hooks/useConversations";
 
 export default function Messages() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
     null
   );

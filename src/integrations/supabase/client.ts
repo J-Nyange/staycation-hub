@@ -5,13 +5,36 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://aermicluavoxxxhkajah.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0OTIwMTYsImV4cCI6MjA3MzA2ODAxNn0.xMaSEgsJG9XmKoKMsh3u-srh2HJN7304NgtWpH1L0hU";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Token provider for Clerk integration
+let tokenProvider: () => Promise<string | null> = async () => null;
+
+export const setTokenProvider = (provider: () => Promise<string | null>) => {
+  tokenProvider = provider;
+};
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
+  global: {
+    fetch: async (url, options: RequestInit = {}) => {
+      const token = await tokenProvider();
+      const headers = new Headers(options?.headers);
+      
+      // CRITICAL: Always include the Supabase anon key
+      headers.set('apikey', SUPABASE_PUBLISHABLE_KEY);
+      
+      // Add Clerk JWT if available (for authenticated requests)
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      
+      return fetch(url, {
+        ...options,
+        headers,
+      });
+    },
+  },
 });

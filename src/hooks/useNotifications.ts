@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 
 export interface Notification {
   id: string;
@@ -15,7 +15,7 @@ export interface Notification {
 }
 
 export const useNotifications = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery({

@@ -1,12 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@clerk/clerk-react";
 
 export interface Review {
   id: string;
   user_id: string;
   property_id: string;
-  booking_id: string | null;
   rating: number;
   comment: string | null;
   created_at: string;
@@ -71,12 +70,13 @@ export const useReviews = (propertyId: string) => {
 
       return reviews;
     },
+    enabled: !!propertyId,
   });
 };
 
 export const useAddReview = () => {
+  const { user } = useUser();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -116,8 +116,8 @@ export const useAddReview = () => {
 };
 
 export const useDeleteReview = () => {
+  const { user } = useUser();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 

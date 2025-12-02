@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Property } from '@/hooks/useProperties';
-import { supabase } from '@/integrations/supabase/client';
-import { format, differenceInDays } from 'date-fns';
-import { CalendarIcon, Loader2, CreditCard, Info, Shield, AlertCircle } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import StripePaymentForm from './StripePaymentForm';
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Info, CreditCard, CalendarIcon, Shield, AlertCircle, Loader2 } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import StripePaymentForm from "@/components/StripePaymentForm";
+import { Property } from "@/hooks/useProperties";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 interface BookingModalProps {
   property: Property;
@@ -30,20 +31,24 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ property, open, onOpenChange }: BookingModalProps) {
-  const [checkIn, setCheckIn] = useState<Date | undefined>();
-  const [checkOut, setCheckOut] = useState<Date | undefined>();
-  const [guests, setGuests] = useState(1);
-  const [specialRequests, setSpecialRequests] = useState('');
+  const { user } = useUser();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState<'details' | 'payment'>('details');
-  const [bookingId, setBookingId] = useState<string>('');
-  const [clientSecret, setClientSecret] = useState<string>('');
+  
+  // Form State
+  const [checkIn, setCheckIn] = useState<Date>();
+  const [checkOut, setCheckOut] = useState<Date>();
+  const [guests, setGuests] = useState(1);
+  const [specialRequests, setSpecialRequests] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const { user } = useAuth();
-  const { toast } = useToast();
+  
+  // Payment State
+  const [clientSecret, setClientSecret] = useState("");
+  const [bookingId, setBookingId] = useState("");
 
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
-  const totalPrice = nights * property.price_per_night;
+  const totalPrice = nights * (property.price_per_night || property.price || 0);
 
   const handleBookingDetails = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +242,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               {checkIn && checkOut && (
                 <div className="bg-muted p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
-                    <span>${property.price_per_night} × {nights} nights</span>
+                    <span>${property.price_per_night || property.price} × {nights} nights</span>
                     <span>${totalPrice}</span>
                   </div>
                   <div className="flex justify-between font-semibold">

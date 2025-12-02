@@ -11,11 +11,10 @@ import {
   BedDouble, Bath, Home
 } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import BookingModal from "@/components/BookingModal";
-import AuthModal from "@/components/AuthModal";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import ImageCarousel from "@/components/ImageCarousel";
@@ -24,11 +23,11 @@ import { generatePropertySchema, generateBreadcrumbSchema } from "@/lib/structur
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { openSignIn } = useClerk();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(id || "");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", id],
@@ -47,7 +46,7 @@ const PropertyDetails = () => {
 
   const handleWishlistToggle = () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      openSignIn();
       return;
     }
     if (isInWishlist(id || "")) {
@@ -59,7 +58,7 @@ const PropertyDetails = () => {
 
   const handleBookNowClick = () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      openSignIn();
       return;
     }
     setIsBookingModalOpen(true);
@@ -321,11 +320,7 @@ const PropertyDetails = () => {
         onOpenChange={setIsBookingModalOpen}
       />
       
-      <AuthModal
-        trigger={<></>}
-        open={isAuthModalOpen}
-        onOpenChange={setIsAuthModalOpen}
-      />
+
     </div>
   );
 };

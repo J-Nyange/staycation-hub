@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 interface AddPropertyModalProps {
@@ -16,7 +16,22 @@ interface AddPropertyModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const availableAmenities = [
+  "wifi",
+  "parking",
+  "pool",
+  "kitchen",
+  "air_conditioning",
+  "beach_access",
+  "gym",
+  "spa",
+  "restaurant",
+  "bar"
+];
+
 const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
+  const { user } = useUser();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -27,25 +42,9 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
     guests: "",
     bedrooms: "",
     bathrooms: "",
-    images: ["", "", ""] as string[],
+    images: ["", "", ""],
     amenities: [] as string[],
   });
-
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const availableAmenities = [
-    "wifi",
-    "parking",
-    "pool",
-    "kitchen",
-    "air_conditioning",
-    "beach_access",
-    "gym",
-    "spa",
-    "restaurant",
-    "bar"
-  ];
 
   const handleAmenityChange = (amenity: string, checked: boolean) => {
     setFormData(prev => ({

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -37,7 +37,7 @@ interface Booking {
 }
 
 const BookingHistory = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const navigate = useNavigate();
   const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
   const [modifyingBooking, setModifyingBooking] = useState<Booking | null>(null);
