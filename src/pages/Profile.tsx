@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { Loader2, User, Edit, Save, X } from 'lucide-react';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { profile, isLoading, updateProfile, isUpdating, getDisplayName } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -124,7 +124,7 @@ const Profile = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{getDisplayName()}</h2>
-                <p className="text-muted-foreground">{user?.email}</p>
+                <p className="text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
               </div>
             </div>
 

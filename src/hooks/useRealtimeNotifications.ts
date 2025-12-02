@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
 export const useRealtimeNotifications = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const queryClient = useQueryClient();
 
   useEffect(() => {

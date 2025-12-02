@@ -4,21 +4,20 @@ import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home } from "luci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk, SignInButton, SignUpButton } from "@clerk/clerk-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import AuthModal from "@/components/AuthModal";
 import AddPropertyModal from "@/components/AddPropertyModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const { getDisplayName } = useUserProfile();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -34,12 +33,9 @@ const Navbar = () => {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Map View", href: "/map" },
-    { name: "About", href: "/about" },
     { name: "Homestays", href: "/homestays" },
     { name: "Airbnb", href: "/airbnb" },
     { name: "Villas", href: "/villas" },
-    { name: "Blog", href: "/blog" },
-    { name: "Contacts", href: "/contacts" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -82,7 +78,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
@@ -102,14 +98,15 @@ const Navbar = () => {
                   onClick={() => setIsAddPropertyModalOpen(true)}
                   className="border-primary/20 hover:bg-primary/5"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Property
+                  <Plus className="w-4 h-4 mr-1" />
+                  <span className="hidden xl:inline">Add Property</span>
+                  <span className="xl:hidden">Add</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover:bg-muted">
-                      <User className="w-4 h-4 mr-2" />
-                      {getDisplayName()}
+                    <Button variant="ghost" size="sm" className="hover:bg-muted max-w-[150px]">
+                      <User className="w-4 h-4 mr-1" />
+                      <span className="truncate">{getDisplayName()}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -143,24 +140,21 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <AuthModal 
-                  trigger={
-                    <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/5">
-                      <User className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                  }
-                  open={isAuthModalOpen}
-                  onOpenChange={setIsAuthModalOpen}
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="border-primary/20 hover:bg-primary/5"
-                >
-                  Sign Up
-                </Button>
+                <SignInButton mode="modal">
+                  <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/5">
+                    <User className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-primary/20 hover:bg-primary/5"
+                  >
+                    Sign Up
+                  </Button>
+                </SignUpButton>
               </>
             )}
           </div>
@@ -262,23 +256,20 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <AuthModal 
-                    trigger={
-                      <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
-                        <User className="w-4 h-4 mr-2" />
-                        Sign In
-                      </Button>
-                    }
-                    open={isAuthModalOpen}
-                    onOpenChange={setIsAuthModalOpen}
-                  />
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-primary/20 hover:bg-primary/5"
-                    onClick={() => setIsAuthModalOpen(true)}
-                  >
-                    Sign Up
-                  </Button>
+                  <SignInButton mode="modal">
+                    <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5">
+                      <User className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-primary/20 hover:bg-primary/5"
+                    >
+                      Sign Up
+                    </Button>
+                  </SignUpButton>
                 </>
               )}
             </div>

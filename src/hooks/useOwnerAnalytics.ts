@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import { subDays, subMonths, format } from "date-fns";
 
 export type TimeRange = "7days" | "30days" | "3months" | "1year" | "all";
@@ -52,7 +52,7 @@ const getDateRange = (range: TimeRange) => {
 };
 
 export const useOwnerAnalytics = (timeRange: TimeRange = "30days") => {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const { data: analytics = [], isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ["owner-analytics", user?.id, timeRange],

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UserProfile {
@@ -18,7 +18,7 @@ export interface UserProfile {
 }
 
 export const useUserProfile = () => {
-  const { user } = useAuth();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -31,7 +31,7 @@ export const useUserProfile = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data as UserProfile;
@@ -67,25 +67,26 @@ export const useUserProfile = () => {
   });
 
   const getDisplayName = () => {
-    if (!profile) return user?.email || 'User';
+    const first_name = profile?.first_name || user?.firstName;
+    const last_name = profile?.last_name || user?.lastName;
     
-    const { first_name, last_name } = profile;
-    if (first_name && last_name) {
-      return `${first_name} ${last_name}`;
-    } else if (first_name) {
+    // Return only first name to prevent navbar overflow
+    if (first_name) {
       return first_name;
     } else if (last_name) {
       return last_name;
     }
     
-    return user?.email || 'User';
+    return user?.primaryEmailAddress?.emailAddress || 'User';
   };
 
   return {
     profile,
-    isLoading,
+    isLoading: isLoading || !isLoaded,
     updateProfile: updateProfile.mutate,
     isUpdating: updateProfile.isPending,
     getDisplayName,
+    user,
+    isSignedIn
   };
 };

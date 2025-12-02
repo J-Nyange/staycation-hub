@@ -5,13 +5,13 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Download, Home } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from "@clerk/clerk-react";
 import { supabase } from '@/integrations/supabase/client';
 
 export default function BookingConfirmation() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

@@ -4,6 +4,7 @@ import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react"
 const Footer = () => {
   const quickLinks = [
     { name: "About Us", href: "/about" },
+    { name: "Blog", href: "/blog" },
     { name: "Properties", href: "/properties" },
     { name: "How It Works", href: "/how-it-works" },
     { name: "Contact", href: "/contacts" },
@@ -118,7 +119,7 @@ const Footer = () => {
                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-muted-foreground">hello@Villa Horizon.com</span>
+                <span className="text-muted-foreground">hello@villahorizon.com</span>
               </div>
             </div>
 

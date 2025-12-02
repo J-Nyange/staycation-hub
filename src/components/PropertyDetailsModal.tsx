@@ -17,12 +17,11 @@ import {
   MessageSquare
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyRating } from "@/hooks/useReviews";
 import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
-import AuthModal from "@/components/AuthModal";
 import BookingModal from "@/components/BookingModal";
 import ImageCarousel from "@/components/ImageCarousel";
 
@@ -33,10 +32,10 @@ interface PropertyDetailsModalProps {
 }
 
 const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsModalProps) => {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { openSignIn } = useClerk();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: ratingData } = usePropertyRating(property?.id || "");
 
@@ -48,7 +47,7 @@ const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsM
 
   const handleWishlistToggle = () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      openSignIn();
       return;
     }
 
@@ -61,7 +60,7 @@ const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsM
 
   const handleBookingClick = () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      openSignIn();
       return;
     }
     setIsBookingModalOpen(true);
@@ -218,13 +217,6 @@ const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsM
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Auth Modal */}
-      <AuthModal 
-        trigger={<></>}
-        open={isAuthModalOpen}
-        onOpenChange={setIsAuthModalOpen}
-      />
 
       {/* Booking Modal */}
       {user && property && (

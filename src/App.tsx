@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
-import { AuthProvider } from "@/contexts/AuthContext";
+
 import CookieBanner from "@/components/CookieBanner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ComparisonBar from "@/components/ComparisonBar";
@@ -35,10 +35,34 @@ import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
+import { ClerkProvider, useSession } from "@clerk/clerk-react";
+import { useEffect } from "react";
+import { setTokenProvider } from "@/integrations/supabase/client";
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Publishable Key");
+}
+
+const SupabaseTokenSync = () => {
+  const { session } = useSession();
+
+  useEffect(() => {
+    setTokenProvider(async () => {
+      if (!session) return null;
+      return await session.getToken({ template: 'supabase' });
+    });
+  }, [session]);
+
+  return null;
+};
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <AuthProvider>
+  <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <SupabaseTokenSync />
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -74,9 +98,9 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
-    </HelmetProvider>
-  </QueryClientProvider>
+      </HelmetProvider>
+    </QueryClientProvider>
+  </ClerkProvider>
 );
 
 export default App;

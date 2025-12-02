@@ -1,5 +1,5 @@
 import { useWishlist } from '@/hooks/useWishlist';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from "@clerk/clerk-react";
 import PropertyCard from '@/components/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Wishlist = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { wishlistItems, isLoading } = useWishlist();
 
   if (!user) {
