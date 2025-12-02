@@ -48,7 +48,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const [bookingId, setBookingId] = useState("");
 
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
-  const totalPrice = nights * (property.price_per_night || property.price || 0);
+  const totalPrice = nights * (property.price_per_night || 0);
 
   const handleBookingDetails = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,7 +242,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               {checkIn && checkOut && (
                 <div className="bg-muted p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
-                    <span>${property.price_per_night || property.price} × {nights} nights</span>
+                    <span>${property.price_per_night} × {nights} nights</span>
                     <span>${totalPrice}</span>
                   </div>
                   <div className="flex justify-between font-semibold">

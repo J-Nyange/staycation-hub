@@ -34,6 +34,23 @@ export const useUserProfile = () => {
         .maybeSingle();
 
       if (error) throw error;
+      
+      // If profile doesn't exist, create it
+      if (!data) {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            first_name: user.firstName || null,
+            last_name: user.lastName || null,
+          })
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        return newProfile as UserProfile;
+      }
+      
       return data as UserProfile;
     },
     enabled: !!user,
