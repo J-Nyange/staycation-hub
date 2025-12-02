@@ -24,8 +24,21 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       
       try {
         token = await tokenProvider();
+        if (token) {
+          console.log('✅ Clerk token obtained for request to:', url.split('?')[0]);
+          
+          // Decode JWT to see claims (for debugging)
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('🔍 JWT Claims:', payload);
+          } catch (e) {
+            console.warn('Could not decode JWT:', e);
+          }
+        } else {
+          console.warn('⚠️ No Clerk token - using anon key for:', url.split('?')[0]);
+        }
       } catch (error) {
-        console.error('Error getting Clerk token:', error);
+        console.error('❌ Error getting Clerk token:', error);
       }
       
       const headers = new Headers(options?.headers);

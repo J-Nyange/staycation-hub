@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider } from "react-helmet-async";
 
 import CookieBanner from "@/components/CookieBanner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -35,9 +35,10 @@ import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
-import { ClerkProvider, useSession } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { setTokenProvider } from "@/integrations/supabase/client";
+
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -45,28 +46,31 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");
 }
 
+// --- Supabase token sync component ---
 const SupabaseTokenSync = () => {
-  const { session } = useSession();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     setTokenProvider(async () => {
-      if (!session) return null;
       try {
-        const token = await session.getToken({ template: 'supabase' });
-        return token;
+        const token = await getToken({ template: "supabase" });
+        return token || null;
       } catch (error) {
-        console.error('Failed to get Supabase token from Clerk:', error);
+        console.error("Failed to get Supabase token from Clerk:", error);
         return null;
       }
     });
-  }, [session]);
+  }, [getToken]);
 
   return null;
 };
 
+// --- Main App ---
 const App = () => (
   <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    {/* Sync Clerk tokens to Supabase */}
     <SupabaseTokenSync />
+
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
         <TooltipProvider>
