@@ -78,7 +78,7 @@ export const useOwnerAnalytics = (timeRange: TimeRange = "30days") => {
       const { start, end } = getDateRange(timeRange);
 
       const { data, error } = await supabase.rpc("get_revenue_by_month", {
-        owner_uuid: user.id,
+        owner_text: user.id,
         start_date: start,
         end_date: end,
       });

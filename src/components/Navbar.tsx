@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home } from "lucide-react";
+import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home, FileText, PenSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,6 +36,7 @@ const Navbar = () => {
     { name: "Homestays", href: "/homestays" },
     { name: "Airbnb", href: "/airbnb" },
     { name: "Villas", href: "/villas" },
+    { name: "Blog", href: "/blog" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -129,6 +130,15 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate('/wishlist')}>
                       <Heart className="w-4 h-4 mr-2" />
                       My Wishlist
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/my-posts')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      My Blog Posts
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/create-blog')}>
+                      <PenSquare className="w-4 h-4 mr-2" />
+                      Write a Post
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut()}>

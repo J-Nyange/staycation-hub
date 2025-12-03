@@ -6,10 +6,11 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EditPropertyModal from "@/components/EditPropertyModal";
+import TransferOwnershipModal from "@/components/TransferOwnershipModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, ArrowLeft, Plus, Eye } from "lucide-react";
+import { Pencil, Trash2, ArrowLeft, Plus, Eye, ArrowRightLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Property } from "@/hooks/useProperties";
@@ -31,6 +32,7 @@ const MyProperties = () => {
   const queryClient = useQueryClient();
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
+  const [transferringProperty, setTransferringProperty] = useState<{ id: string; title: string } | null>(null);
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ['my-properties', user?.id],
@@ -169,7 +171,7 @@ const MyProperties = () => {
                         ${property.price_per_night}/night
                       </p>
 
-                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2">
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -190,6 +192,15 @@ const MyProperties = () => {
                             Delete
                           </Button>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground hover:text-foreground"
+                          onClick={() => setTransferringProperty({ id: property.id, title: property.title })}
+                        >
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          Transfer Ownership
+                        </Button>
                         <div className="flex gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">
                             {property.category}
@@ -251,6 +262,18 @@ const MyProperties = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {transferringProperty && (
+        <TransferOwnershipModal
+          open={!!transferringProperty}
+          onOpenChange={(open) => !open && setTransferringProperty(null)}
+          propertyId={transferringProperty.id}
+          propertyTitle={transferringProperty.title}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+          }}
+        />
+      )}
     </>
   );
 };
