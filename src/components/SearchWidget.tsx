@@ -94,7 +94,11 @@ const SearchWidget = ({ className, onSearchResults }: SearchWidgetProps) => {
                 selected={checkIn}
                 onSelect={setCheckIn}
                 initialFocus
-                disabled={(date) => date < new Date()}
+                disabled={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today;
+                }}
                 className="p-3 pointer-events-auto"
               />
             </PopoverContent>

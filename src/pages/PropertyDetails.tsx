@@ -19,6 +19,7 @@ import ReviewList from "@/components/reviews/ReviewList";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import ImageCarousel from "@/components/ImageCarousel";
 import { generatePropertySchema, generateBreadcrumbSchema } from "@/lib/structuredData";
+import { getAmenityIcon, formatAmenityText } from "@/lib/amenityIcons";
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -245,13 +246,15 @@ const PropertyDetails = () => {
             <div className="bg-card p-6 rounded-2xl">
               <h2 className="text-xl font-semibold mb-4">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.amenities?.map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    {amenity.toLowerCase() === "wifi" && <Wifi className="w-5 h-5 text-primary" />}
-                    {amenity.toLowerCase() === "parking" && <Car className="w-5 h-5 text-primary" />}
-                    <span className="capitalize">{amenity}</span>
-                  </div>
-                ))}
+                {property.amenities?.map((amenity, index) => {
+                  const Icon = getAmenityIcon(amenity);
+                  return (
+                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <Icon className="w-5 h-5 text-primary flex-shrink-0" />
+                      <span className="text-sm font-medium">{formatAmenityText(amenity)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

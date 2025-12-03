@@ -68,7 +68,7 @@ const Blog = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="py-16 lg:py-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h1 className="text-4xl lg:text-6xl font-bold mb-6">
             Travel 
