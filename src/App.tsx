@@ -32,6 +32,9 @@ import MapView from "./pages/MapView";
 import Notifications from "./pages/Notifications";
 import OwnerBookings from "./pages/OwnerBookings";
 import Messages from "./pages/Messages";
+import CreateBlogPost from "./pages/CreateBlogPost";
+import MyBlogPosts from "./pages/MyBlogPosts";
+import EditBlogPost from "./pages/EditBlogPost";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +90,9 @@ const App = () => (
               <Route path="/homestays" element={<Homestays />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/create-blog" element={<CreateBlogPost />} />
+              <Route path="/my-posts" element={<MyBlogPosts />} />
+              <Route path="/edit-blog/:id" element={<EditBlogPost />} />
               <Route path="/about" element={<About />} />
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/profile" element={<Profile />} />

@@ -808,7 +808,7 @@ export type Database = {
     }
     Functions: {
       get_revenue_by_month: {
-        Args: { end_date: string; owner_uuid: string; start_date: string }
+        Args: { end_date: string; owner_text: string; start_date: string }
         Returns: {
           booking_count: number
           month: string
