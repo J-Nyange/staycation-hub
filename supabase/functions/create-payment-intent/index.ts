@@ -27,17 +27,48 @@ serve(async (req) => {
 
     const { property_id, check_in, check_out, guests, total_price, special_requests, booking_id } = await req.json();
 
-    // Validate availability
-    const { data: existingBookings } = await supabaseClient
-      .from('bookings')
-      .select('id')
-      .eq('property_id', property_id)
-      .in('status', ['confirmed', 'pending'])
-      .gte('check_out', check_in)
-      .lte('check_in', check_out);
+    console.log("Checking availability for:", { property_id, check_in, check_out, booking_id });
 
-    if (existingBookings && existingBookings.length > 0) {
-      throw new Error("Property is not available for selected dates");
+    // Validate availability
+    if (booking_id) {
+      // Exclude the current booking from the check since we just created it
+      // but haven't paid for it yet
+      const { data: conflicts, error: conflictError } = await supabaseClient
+        .from('bookings')
+        .select('id')
+        .eq('property_id', property_id)
+        .in('status', ['confirmed', 'pending'])
+        .gte('check_out', check_in)
+        .lte('check_in', check_out)
+        .neq('id', booking_id);
+        
+      if (conflictError) {
+        console.error("Error checking conflicts:", conflictError);
+        throw new Error("Failed to check availability");
+      }
+
+      if (conflicts && conflicts.length > 0) {
+        console.log("Conflict found (excluding current):", conflicts);
+        throw new Error("Property is not available for selected dates");
+      }
+    } else {
+      const { data: conflicts, error: conflictError } = await supabaseClient
+        .from('bookings')
+        .select('id')
+        .eq('property_id', property_id)
+        .in('status', ['confirmed', 'pending'])
+        .gte('check_out', check_in)
+        .lte('check_in', check_out);
+
+      if (conflictError) {
+        console.error("Error checking conflicts:", conflictError);
+        throw new Error("Failed to check availability");
+      }
+
+      if (conflicts && conflicts.length > 0) {
+        console.log("Conflict found:", conflicts);
+        throw new Error("Property is not available for selected dates");
+      }
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {

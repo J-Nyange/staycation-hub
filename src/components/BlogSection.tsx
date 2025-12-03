@@ -88,7 +88,7 @@ const BlogSection = () => {
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
                   <div className="flex items-center">
                     <User className="w-3 h-3 mr-1" />
-                    Villa Horizon Team
+                    Lukemanbnb Team
                   </div>
                   <div className="flex items-center">
                     <Clock className="w-3 h-3 mr-1" />

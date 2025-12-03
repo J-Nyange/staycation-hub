@@ -24,15 +24,15 @@ const Index = () => {
   const showSearchResults = searchQuery.trim() !== '';
 
   const organizationSchema = generateOrganizationSchema({
-    name: "Villa Horizon Kenya",
-    url: "https://villahorizon.com",
-    logo: "https://villahorizon.com/logo.png",
+    name: "Lukemanbnb Kenya",
+    url: "https://Lukemanbnb.com",
+    logo: "https://Lukemanbnb.com/logo.png",
     description: "Discover luxury villas, cozy homestays, and modern apartments along Kenya's stunning coastline. Book your perfect coastal getaway today.",
-    contactEmail: "info@villahorizon.com",
+    contactEmail: "info@Lukemanbnb.com",
     sameAs: [
-      "https://facebook.com/villahorizon",
-      "https://instagram.com/villahorizon",
-      "https://twitter.com/villahorizon"
+      "https://facebook.com/Lukemanbnb",
+      "https://instagram.com/Lukemanbnb",
+      "https://twitter.com/Lukemanbnb"
     ]
   });
 

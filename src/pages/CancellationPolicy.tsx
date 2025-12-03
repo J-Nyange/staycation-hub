@@ -9,8 +9,8 @@ export default function CancellationPolicy() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Cancellation & Refund Policy"
-        description="Understand Villa Horizon's flexible, moderate, and strict cancellation policies. Learn about refund processing, booking changes, and our guest protection policies."
-        keywords="cancellation policy, refund policy, booking cancellation, flexible cancellation, Villa Horizon refunds"
+        description="Understand Lukemanbnb's flexible, moderate, and strict cancellation policies. Learn about refund processing, booking changes, and our guest protection policies."
+        keywords="cancellation policy, refund policy, booking cancellation, flexible cancellation, Lukemanbnb refunds"
         url={window.location.href}
       />
       <Navbar />
@@ -21,7 +21,7 @@ export default function CancellationPolicy() {
             <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
           </CardHeader>
           <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-            <p>Villa Horizon offers three cancellation policy options for property owners. The policy applicable to your booking is displayed on the property page and in your booking confirmation.</p>
+            <p>Lukemanbnb offers three cancellation policy options for property owners. The policy applicable to your booking is displayed on the property page and in your booking confirmation.</p>
 
             <div className="not-prose my-6 space-y-6">
               <Card>

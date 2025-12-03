@@ -18,7 +18,7 @@ export const generatePropertySchema = (property: PropertySchemaProps) => {
   return {
     "@context": "https://schema.org",
     "@type": "LodgingBusiness",
-    "@id": `https://villahorizon.com/property/${property.id}`,
+    "@id": `https://Lukemanbnb.com/property/${property.id}`,
     name: property.title,
     description: property.description,
     image: property.image,
@@ -69,7 +69,7 @@ export const generateReviewSchema = (review: ReviewSchemaProps) => {
     itemReviewed: {
       "@type": "LodgingBusiness",
       name: review.propertyName,
-      "@id": `https://villahorizon.com/property/${review.propertyId}`,
+      "@id": `https://Lukemanbnb.com/property/${review.propertyId}`,
     },
     author: {
       "@type": "Person",
@@ -159,10 +159,10 @@ export const generateBlogPostSchema = (post: BlogPostSchemaProps) => {
     },
     publisher: {
       "@type": "Organization",
-      name: "Villa Horizon Kenya",
+      name: "Lukemanbnb Kenya",
       logo: {
         "@type": "ImageObject",
-        url: "https://villahorizon.com/logo.png",
+        url: "https://Lukemanbnb.com/logo.png",
       },
     },
     mainEntityOfPage: {

@@ -11,7 +11,6 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
@@ -24,7 +23,6 @@ const Navbar = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/?search=${encodeURIComponent(searchQuery)}`);
-      setIsSearchOpen(false);
       setIsMenuOpen(false);
       setSearchQuery("");
     }
@@ -50,45 +48,48 @@ const Navbar = () => {
             to="/" 
             className="flex items-center space-x-2 transition-all duration-300 hover:scale-105"
           >
-            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-xl">
-              L
+            <div className="w-24 h-12 lg:w-28 lg:h-12 rounded-xl flex items-center justify-center font-bold text-xl">
+              <img src="/Logo/lukemanLogo.png" className=" object-cover" alt="" />
             </div>
-            <span className="sm:block text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Villa Horizon
-            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 hover:text-primary ${
-                  isActive(item.href)
-                    ? "text-primary"
-                    : "text-foreground/70 hover:text-foreground"
-                }`}
-              >
-                {item.name}
-                {isActive(item.href) && (
-                  <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-secondary rounded-full" />
-                )}
-              </Link>
-            ))}
+          {/* Desktop Search & Navigation */}
+          <div className="hidden lg:flex items-center space-x-6 flex-1 max-w-4xl">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search properties..."
+                className="pl-10 h-9 bg-muted/50 border-0 focus:bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </form>
+
+            {/* Navigation Links */}
+            <div className="flex items-center space-x-6">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 hover:text-primary ${
+                    isActive(item.href)
+                      ? "text-primary"
+                      : "text-foreground/70 hover:text-foreground"
+                  }`}
+                >
+                  {item.name}
+                  {isActive(item.href) && (
+                    <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-secondary rounded-full" />
+                  )}
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="hover:bg-muted"
-            >
-              <Search className="w-4 h-4" />
-            </Button>
-            
             {user && <NotificationBell />}
             
             {user ? (
@@ -179,22 +180,6 @@ const Navbar = () => {
             {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
-
-        {/* Search Bar */}
-        {isSearchOpen && (
-          <div className="hidden lg:block py-4 border-t border-border/50">
-            <form onSubmit={handleSearch} className="relative max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search properties, locations..."
-                className="pl-10 bg-muted/50 border-0 focus:bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </form>
-          </div>
-        )}
       </div>
 
       {/* Mobile Menu */}

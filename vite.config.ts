@@ -15,10 +15,10 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'hero-villa.jpg'],
+      includeAssets: ['Logo/lukemanLogo.png', 'robots.txt', 'hero-villa.jpg'],
       manifest: {
-        name: 'Villa Horizon Kenya',
-        short_name: 'VillaHorizon',
+        name: 'Lukemanbnb Kenya',
+        short_name: 'Lukemanbnb',
         description: 'Discover coastal Kenya properties - Airbnb apartments, luxury villas, and cozy homestays',
         theme_color: '#60A5FA',
         background_color: '#ffffff',
@@ -28,15 +28,15 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/placeholder.svg',
+            src: '/Logo/lukemanLogo.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/placeholder.svg',
+            src: '/Logo/lukemanLogo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]

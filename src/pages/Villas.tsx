@@ -28,8 +28,8 @@ const Villas = () => {
 
   const breadcrumbSchema = generateBreadcrumbSchema({
     items: [
-      { name: "Home", url: "https://villahorizon.com" },
-      { name: "Luxury Villas", url: "https://villahorizon.com/villas" },
+      { name: "Home", url: "https://Lukemanbnb.com" },
+      { name: "Luxury Villas", url: "https://Lukemanbnb.com/villas" },
     ],
   });
 

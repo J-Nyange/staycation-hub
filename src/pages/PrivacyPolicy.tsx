@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Privacy Policy"
-        description="Learn how Villa Horizon Kenya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices."
+        description="Learn how Lukemanbnb Kenya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices."
         keywords="privacy policy, data protection, GDPR, personal information, data security"
         url={window.location.href}
       />

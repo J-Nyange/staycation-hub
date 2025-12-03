@@ -13,11 +13,11 @@ export default function SEO({
   title,
   description,
   keywords,
-  image = '/placeholder.svg',
+  image = '/Logo/lukemanLogo.png',
   url = window.location.href,
   type = 'website',
 }: SEOProps) {
-  const siteName = 'Villa Horizon Kenya';
+  const siteName = 'Lukemanbnb Kenya';
   const fullTitle = `${title} | ${siteName}`;
 
   return (
