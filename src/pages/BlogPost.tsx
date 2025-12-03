@@ -70,7 +70,7 @@ const BlogPost = () => {
     "Culture": "bg-primary/15 text-primary border-primary/30",
   };
 
-  const authorName = 'Villa Horizon Team';
+  const authorName = 'Lukemanbnb Team';
 
   const blogSchema = generateBlogPostSchema({
     title: post.title,
@@ -84,8 +84,8 @@ const BlogPost = () => {
 
   const breadcrumbSchema = generateBreadcrumbSchema({
     items: [
-      { name: "Home", url: "https://villahorizon.com" },
-      { name: "Blog", url: "https://villahorizon.com/blog" },
+      { name: "Home", url: "https://Lukemanbnb.com" },
+      { name: "Blog", url: "https://Lukemanbnb.com/blog" },
       { name: post.title, url: window.location.href },
     ],
   });

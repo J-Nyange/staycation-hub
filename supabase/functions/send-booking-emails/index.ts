@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (type === 'confirmation') {
       // Send confirmation email to guest
       await resend.emails.send({
-        from: "Villa Horizon <onboarding@resend.dev>",
+        from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
         subject: `Booking Confirmed - ${propertyTitle}`,
         html: `
@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
 
             <p>If you have any questions, please don't hesitate to reach out.</p>
-            <p>Best regards,<br>Villa Horizon Team</p>
+            <p>Best regards,<br>Lukemanbnb Team</p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
               <p>Need to cancel? Check our <a href="https://your-domain.com/cancellation-policy">cancellation policy</a>.</p>
@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (ownerUser?.email) {
           await resend.emails.send({
-            from: "Villa Horizon <onboarding@resend.dev>",
+            from: "Lukemanbnb <onboarding@resend.dev>",
             to: [ownerUser.email],
             subject: `New Booking - ${propertyTitle}`,
             html: `
@@ -137,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
 
                 <p>Please prepare for your guest's arrival and ensure the property is ready.</p>
-                <p>Best regards,<br>Villa Horizon Team</p>
+                <p>Best regards,<br>Lukemanbnb Team</p>
               </div>
             `,
           });
@@ -146,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (type === 'reminder') {
       // Send check-in reminder to guest
       await resend.emails.send({
-        from: "Villa Horizon <onboarding@resend.dev>",
+        from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
         subject: `Reminder: Check-in Tomorrow - ${propertyTitle}`,
         html: `
@@ -164,14 +164,14 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
 
             <p>Have a wonderful stay!</p>
-            <p>Best regards,<br>Villa Horizon Team</p>
+            <p>Best regards,<br>Lukemanbnb Team</p>
           </div>
         `,
       });
     } else if (type === 'review_request') {
       // Send review request after checkout
       await resend.emails.send({
-        from: "Villa Horizon <onboarding@resend.dev>",
+        from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
         subject: `How was your stay at ${propertyTitle}?`,
         html: `
@@ -189,8 +189,8 @@ const handler = async (req: Request): Promise<Response> => {
               </a>
             </div>
 
-            <p>Thank you for choosing Villa Horizon!</p>
-            <p>Best regards,<br>Villa Horizon Team</p>
+            <p>Thank you for choosing Lukemanbnb!</p>
+            <p>Best regards,<br>Lukemanbnb Team</p>
           </div>
         `,
       });

@@ -36,14 +36,14 @@ const Footer = () => {
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Section */}
-          <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center space-x-2 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-xl">
-                L
+          <div className="lg:col-span-1 space-y-6">
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 transition-all duration-300 hover:scale-105"
+            >
+              <div className="w-24 h-12 lg:w-32 lg:h-12 rounded-xl flex items-center justify-center font-bold text-xl">
+                <img src="/Logo/lukemanLogo.png" className=" object-cover" alt="" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Villa Horizon
-              </span>
             </Link>
             <p className="text-muted-foreground mb-6 leading-relaxed">
               Discover luxury coastal accommodations across Kenya's most beautiful destinations. 
@@ -119,7 +119,7 @@ const Footer = () => {
                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-muted-foreground">hello@villahorizon.com</span>
+                <span className="text-muted-foreground">hello@Lukemanbnb.com</span>
               </div>
             </div>
 
@@ -143,7 +143,7 @@ const Footer = () => {
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             {/* Copyright */}
             <div className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} Villa Horizon. All rights reserved.
+              © {new Date().getFullYear()} Lukemanbnb. All rights reserved.
             </div>
 
             {/* Legal Links */}

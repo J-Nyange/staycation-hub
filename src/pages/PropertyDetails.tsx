@@ -123,9 +123,9 @@ const PropertyDetails = () => {
 
   const breadcrumbSchema = generateBreadcrumbSchema({
     items: [
-      { name: "Home", url: "https://villahorizon.com" },
-      { name: categoryLabels[property.category as keyof typeof categoryLabels], url: `https://villahorizon.com/${property.category}` },
-      { name: property.title, url: `https://villahorizon.com/property/${property.id}` },
+      { name: "Home", url: "https://Lukemanbnb.com" },
+      { name: categoryLabels[property.category as keyof typeof categoryLabels], url: `https://Lukemanbnb.com/${property.category}` },
+      { name: property.title, url: `https://Lukemanbnb.com/property/${property.id}` },
     ],
   });
 

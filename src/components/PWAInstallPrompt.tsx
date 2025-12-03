@@ -69,7 +69,7 @@ const PWAInstallPrompt = () => {
         <Download className="h-5 w-5 text-primary" />
         <AlertDescription className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <p className="font-semibold text-foreground mb-1">Install Villa Horizon</p>
+            <p className="font-semibold text-foreground mb-1">Install Lukemanbnb</p>
             <p className="text-sm text-muted-foreground mb-3">
               Add to your home screen for quick access and offline browsing
             </p>

@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email to property owner
     const ownerEmailResponse = await resend.emails.send({
-      from: "Villa Horizon Contact <onboarding@resend.dev>",
+      from: "Lukemanbnb Contact <onboarding@resend.dev>",
       to: ["vilahorizon04@gmail.com"], // Owner's email
       subject: `New Contact Form: ${data.subject}`,
       html: `
@@ -61,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation email to user
     const userEmailResponse = await resend.emails.send({
-      from: "Villa Horizon <onboarding@resend.dev>",
+      from: "Lukemanbnb <onboarding@resend.dev>",
       to: [data.email],
       subject: "We received your message!",
       html: `
@@ -70,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
         <p><strong>Your message:</strong></p>
         <p>${data.message.replace(/\n/g, '<br>')}</p>
         <br>
-        <p>Best regards,<br>The Villa Horizon Team</p>
+        <p>Best regards,<br>The Lukemanbnb Team</p>
       `,
     });
 

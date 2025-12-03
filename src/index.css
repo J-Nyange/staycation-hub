@@ -2,38 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Villa Horizon Design System - Coastal Luxury Theme */
+/* Lukemanbnb Design System - Coastal Luxury Theme */
 
 @layer base {
   :root {
     /* Coastal Color Palette */
     --background: 0 0% 100%;
     --foreground: 215 28% 17%;
-    
+
     /* Ocean Blue Primary */
     --primary: 213 94% 68%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 213 94% 78%;
     --primary-dark: 213 94% 48%;
-    
+
     /* Coastal Secondary */
     --secondary: 199 89% 48%;
     --secondary-foreground: 0 0% 100%;
-    
+
     /* Tropical Accent */
     --accent: 43 96% 56%;
     --accent-foreground: 215 28% 17%;
-    
+
     /* Ocean Gradients */
-    --gradient-ocean: linear-gradient(135deg, hsl(213, 94%, 68%) 0%, hsl(199, 89%, 48%) 100%);
-    --gradient-sunset: linear-gradient(135deg, hsl(43, 96%, 56%) 0%, hsl(24, 95%, 53%) 100%);
-    --gradient-tropical: linear-gradient(135deg, hsl(152, 76%, 36%) 0%, hsl(199, 89%, 48%) 100%);
-    
+    --gradient-ocean: linear-gradient(
+      135deg,
+      hsl(213, 94%, 68%) 0%,
+      hsl(199, 89%, 48%) 100%
+    );
+    --gradient-sunset: linear-gradient(
+      135deg,
+      hsl(43, 96%, 56%) 0%,
+      hsl(24, 95%, 53%) 100%
+    );
+    --gradient-tropical: linear-gradient(
+      135deg,
+      hsl(152, 76%, 36%) 0%,
+      hsl(199, 89%, 48%) 100%
+    );
+
     /* Elegant Shadows */
     --shadow-luxury: 0 10px 40px -10px hsl(213 94% 68% / 0.3);
     --shadow-card: 0 4px 20px -4px hsl(215 28% 17% / 0.1);
     --shadow-hover: 0 20px 60px -10px hsl(213 94% 68% / 0.4);
-    
+
     /* Smooth Transitions */
     --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -80,15 +92,15 @@
   .dark {
     --background: 215 28% 7%;
     --foreground: 0 0% 98%;
-    
+
     --primary: 213 94% 68%;
     --primary-foreground: 215 28% 7%;
     --primary-light: 213 94% 78%;
     --primary-dark: 213 94% 48%;
-    
+
     --secondary: 199 89% 48%;
     --secondary-foreground: 0 0% 100%;
-    
+
     --accent: 43 96% 56%;
     --accent-foreground: 215 28% 7%;
 

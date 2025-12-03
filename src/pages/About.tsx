@@ -7,17 +7,17 @@ import { generateBreadcrumbSchema } from "@/lib/structuredData";
 const About = () => {
   const breadcrumbSchema = generateBreadcrumbSchema({
     items: [
-      { name: "Home", url: "https://villahorizon.com" },
-      { name: "About", url: "https://villahorizon.com/about" },
+      { name: "Home", url: "https://Lukemanbnb.com" },
+      { name: "About", url: "https://Lukemanbnb.com/about" },
     ],
   });
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="About Villa Horizon Kenya"
-        description="Learn about Villa Horizon, Kenya's premier coastal property rental platform. Connecting travelers with luxury villas, homestays, and apartments since 2020."
-        keywords="about Villa Horizon, Kenya property rentals, coastal accommodations Kenya, vacation rental platform"
+        title="About Lukemanbnb Kenya"
+        description="Learn about Lukemanbnb, Kenya's premier coastal property rental platform. Connecting travelers with luxury villas, homestays, and apartments since 2020."
+        keywords="about Lukemanbnb, Kenya property rentals, coastal accommodations Kenya, vacation rental platform"
         url={window.location.href}
       />
       <script type="application/ld+json">
@@ -31,7 +31,7 @@ const About = () => {
             <h1 className="text-4xl lg:text-6xl font-bold mb-6">
               About
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {" "}Villa Horizon
+                {" "}Lukemanbnb
               </span>
             </h1>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -48,7 +48,7 @@ const About = () => {
                 <h2 className="text-3xl lg:text-4xl font-bold mb-6">Our Story</h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    Founded with a vision to showcase Kenya's stunning coastal beauty, Villa Horizon began as a passion project to connect travelers with unique, luxury accommodations along our pristine coastline.
+                    Founded with a vision to showcase Kenya's stunning coastal beauty, Lukemanbnb began as a passion project to connect travelers with unique, luxury accommodations along our pristine coastline.
                   </p>
                   <p>
                     From the white sand beaches of Diani to the cultural richness of Mombasa, we curate exceptional properties that offer more than just a place to stay – they provide gateways to unforgettable experiences.

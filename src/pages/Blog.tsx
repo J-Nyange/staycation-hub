@@ -48,8 +48,8 @@ const Blog = () => {
 
   const breadcrumbSchema = generateBreadcrumbSchema({
     items: [
-      { name: "Home", url: "https://villahorizon.com" },
-      { name: "Blog", url: "https://villahorizon.com/blog" },
+      { name: "Home", url: "https://Lukemanbnb.com" },
+      { name: "Blog", url: "https://Lukemanbnb.com/blog" },
     ],
   });
 
@@ -133,7 +133,7 @@ const Blog = () => {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center">
                       <User className="w-3 h-3 mr-1" />
-                      Villa Horizon Team
+                      Lukemanbnb Team
                     </div>
                     <div className="flex items-center">
                       <Clock className="w-3 h-3 mr-1" />
@@ -185,7 +185,7 @@ const Blog = () => {
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center">
                         <User className="w-3 h-3 mr-1" />
-                        Villa Horizon Team
+                        Lukemanbnb Team
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-3 h-3 mr-1" />

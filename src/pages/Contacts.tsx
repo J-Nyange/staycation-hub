@@ -62,8 +62,8 @@ const Contacts = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="Contact Us"
-        description="Get in touch with Villa Horizon Kenya. Contact our support team for booking assistance, property inquiries, or general questions about our coastal accommodations."
-        keywords="contact Villa Horizon, customer support, booking help, property inquiries, Mombasa contact"
+        description="Get in touch with Lukemanbnb Kenya. Contact our support team for booking assistance, property inquiries, or general questions about our coastal accommodations."
+        keywords="contact Lukemanbnb, customer support, booking help, property inquiries, Mombasa contact"
         url={window.location.href}
       />
       <Navbar />
@@ -124,8 +124,8 @@ const Contacts = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Email Address</h3>
                       <p className="text-muted-foreground">
-                        info@villahorizon.com<br />
-                        bookings@villahorizon.com
+                        info@Lukemanbnb.com<br />
+                        bookings@Lukemanbnb.com
                       </p>
                     </div>
                   </div>

@@ -8,8 +8,8 @@ export default function TermsOfService() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Terms of Service"
-        description="Review Villa Horizon Kenya's terms of service, including user agreements, booking policies, payment terms, and liability information."
-        keywords="terms of service, user agreement, booking terms, Villa Horizon policies"
+        description="Review Lukemanbnb Kenya's terms of service, including user agreements, booking policies, payment terms, and liability information."
+        keywords="terms of service, user agreement, booking terms, Lukemanbnb policies"
         url={window.location.href}
       />
       <Navbar />
@@ -21,13 +21,13 @@ export default function TermsOfService() {
           </CardHeader>
           <CardContent className="prose prose-sm max-w-none dark:prose-invert">
             <h2>1. Acceptance of Terms</h2>
-            <p>By accessing and using Villa Horizon Kenya, you accept and agree to be bound by the terms and provision of this agreement.</p>
+            <p>By accessing and using Lukemanbnb Kenya, you accept and agree to be bound by the terms and provision of this agreement.</p>
 
             <h2>2. User Accounts</h2>
             <p>You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.</p>
 
             <h2>3. Property Listings</h2>
-            <p>Property owners are responsible for the accuracy of their listings. Villa Horizon reserves the right to remove any listing that violates our policies.</p>
+            <p>Property owners are responsible for the accuracy of their listings. Lukemanbnb reserves the right to remove any listing that violates our policies.</p>
 
             <h2>4. Booking and Payments</h2>
             <p>All bookings are subject to availability. Payment must be completed at the time of booking. We use Stripe for secure payment processing.</p>
@@ -45,10 +45,10 @@ export default function TermsOfService() {
             </ul>
 
             <h2>7. Limitation of Liability</h2>
-            <p>Villa Horizon acts as a platform connecting property owners and guests. We are not responsible for the quality, safety, or legality of properties listed.</p>
+            <p>Lukemanbnb acts as a platform connecting property owners and guests. We are not responsible for the quality, safety, or legality of properties listed.</p>
 
             <h2>8. Intellectual Property</h2>
-            <p>All content on this platform, including text, graphics, logos, and images, is the property of Villa Horizon or its content suppliers.</p>
+            <p>All content on this platform, including text, graphics, logos, and images, is the property of Lukemanbnb or its content suppliers.</p>
 
             <h2>9. Dispute Resolution</h2>
             <p>Any disputes arising from the use of this platform will be resolved through arbitration in accordance with Kenyan law.</p>
