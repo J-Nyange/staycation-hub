@@ -5,6 +5,7 @@ import PropertyMarker from './PropertyMarker';
 import MapControls from './MapControls';
 import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
+import L from 'leaflet';
 
 interface PropertyMapProps {
   properties: Property[];
@@ -27,7 +28,6 @@ const PropertyMap = ({
 
   useEffect(() => {
     // Fix for default marker icons not showing in production
-    const L = require('leaflet');
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -66,7 +66,6 @@ const PropertyMap = ({
           zoomToBoundsOnClick={true}
           iconCreateFunction={(cluster) => {
             const count = cluster.getChildCount();
-            const L = require('leaflet');
             return new L.DivIcon({
               html: `<div class="cluster-icon">${count}</div>`,
               className: 'custom-cluster-icon',
