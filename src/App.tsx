@@ -35,6 +35,7 @@ import Messages from "./pages/Messages";
 import CreateBlogPost from "./pages/CreateBlogPost";
 import MyBlogPosts from "./pages/MyBlogPosts";
 import EditBlogPost from "./pages/EditBlogPost";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

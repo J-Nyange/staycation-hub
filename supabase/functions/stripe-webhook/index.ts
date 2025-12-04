@@ -80,22 +80,24 @@ serve(async (req) => {
               payout_status: 'pending',
             });
 
-          // Update profile earnings
-          await supabaseAdmin.rpc('increment', {
-            table_name: 'profiles',
-            column_name: 'pending_payout',
-            increment_value: netAmount,
-            row_id: property.owner_id,
-          }).catch(() => {
+        // Update profile earnings - try RPC first, fallback to direct update
+          try {
+            await supabaseAdmin.rpc('increment', {
+              table_name: 'profiles',
+              column_name: 'pending_payout',
+              increment_value: netAmount,
+              row_id: property.owner_id,
+            });
+          } catch {
             // Fallback if RPC doesn't exist
-            supabaseAdmin
+            await supabaseAdmin
               .from('profiles')
               .update({ 
                 pending_payout: netAmount,
                 is_property_owner: true
               })
               .eq('user_id', property.owner_id);
-          });
+          }
         }
 
         // Send confirmation emails
