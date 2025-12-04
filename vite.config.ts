@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-    }
+    },
   },
   plugins: [
     react(),
@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['Logo/lukemanLogo.png', 'robots.txt', 'hero-villa.jpg'],
+      injectRegister: 'auto',
+      srcDir: 'src',
+      filename: 'service-worker.ts',
+      strategies: 'injectManifest',
       manifest: {
         name: 'Lukemanbnb Kenya',
         short_name: 'Lukemanbnb',

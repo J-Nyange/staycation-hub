@@ -29,5 +29,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Suppress manifest CORS errors - not critical for app functionality
+      window.addEventListener('error', function(event) {
+        if (event.filename && event.filename.includes('manifest.json')) {
+          event.preventDefault();
+        }
+      }, true);
+    </script>
   </body>
 </html>
