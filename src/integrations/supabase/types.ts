@@ -62,7 +62,9 @@ export type Database = {
           excerpt: string | null
           featured_image: string | null
           id: string
+          is_featured: boolean | null
           is_published: boolean | null
+          moderation_status: string | null
           published_at: string | null
           slug: string
           tags: string[] | null
@@ -77,7 +79,9 @@ export type Database = {
           excerpt?: string | null
           featured_image?: string | null
           id?: string
+          is_featured?: boolean | null
           is_published?: boolean | null
+          moderation_status?: string | null
           published_at?: string | null
           slug: string
           tags?: string[] | null
@@ -92,7 +96,9 @@ export type Database = {
           excerpt?: string | null
           featured_image?: string | null
           id?: string
+          is_featured?: boolean | null
           is_published?: boolean | null
+          moderation_status?: string | null
           published_at?: string | null
           slug?: string
           tags?: string[] | null
@@ -457,12 +463,14 @@ export type Database = {
           first_name: string | null
           id: string
           is_property_owner: boolean | null
+          is_suspended: boolean | null
           last_name: string | null
           pending_payout: number | null
           phone: string | null
           preferred_language: string | null
           stripe_connect_account_id: string | null
           stripe_customer_id: string | null
+          suspended_reason: string | null
           total_earnings: number | null
           updated_at: string
           user_id: string
@@ -476,12 +484,14 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_property_owner?: boolean | null
+          is_suspended?: boolean | null
           last_name?: string | null
           pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
           stripe_connect_account_id?: string | null
           stripe_customer_id?: string | null
+          suspended_reason?: string | null
           total_earnings?: number | null
           updated_at?: string
           user_id: string
@@ -495,12 +505,14 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_property_owner?: boolean | null
+          is_suspended?: boolean | null
           last_name?: string | null
           pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
           stripe_connect_account_id?: string | null
           stripe_customer_id?: string | null
+          suspended_reason?: string | null
           total_earnings?: number | null
           updated_at?: string
           user_id?: string
@@ -522,10 +534,12 @@ export type Database = {
           images: string[] | null
           instant_book: boolean | null
           is_active: boolean | null
+          is_featured: boolean | null
           latitude: number | null
           location: string
           longitude: number | null
           main_image: string | null
+          moderation_status: string | null
           owner_id: string | null
           price_per_night: number
           property_type: string | null
@@ -546,10 +560,12 @@ export type Database = {
           images?: string[] | null
           instant_book?: boolean | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           latitude?: number | null
           location: string
           longitude?: number | null
           main_image?: string | null
+          moderation_status?: string | null
           owner_id?: string | null
           price_per_night: number
           property_type?: string | null
@@ -570,10 +586,12 @@ export type Database = {
           images?: string[] | null
           instant_book?: boolean | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           latitude?: number | null
           location?: string
           longitude?: number | null
           main_image?: string | null
+          moderation_status?: string | null
           owner_id?: string | null
           price_per_night?: number
           property_type?: string | null
@@ -749,6 +767,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       wishlists: {
         Row: {
           created_at: string
@@ -815,9 +854,17 @@ export type Database = {
           revenue: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -944,6 +991,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

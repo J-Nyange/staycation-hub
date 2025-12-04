@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const Wishlist = () => {
   const { user } = useUser();
@@ -13,51 +15,61 @@ const Wishlist = () => {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-4">Your Wishlist</h1>
-          <p className="text-muted-foreground mb-8">
-            Sign in to save properties to your wishlist and access them anytime.
-          </p>
-          <Link to="/">
-            <Button>
-              Browse Properties
-            </Button>
-          </Link>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-4">Your Wishlist</h1>
+            <p className="text-muted-foreground mb-8">
+              Sign in to save properties to your wishlist and access them anytime.
+            </p>
+            <Link to="/">
+              <Button>
+                Browse Properties
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
-            <Skeleton className="w-8 h-8" />
-            <Skeleton className="h-8 w-48" />
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center gap-3 mb-8">
+              <Skeleton className="w-8 h-8" />
+              <Skeleton className="h-8 w-48" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-48 w-full" />
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <Skeleton className="h-48 w-full" />
-                <CardContent className="p-4 space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/4" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
           <Heart className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold">Your Wishlist</h1>
@@ -97,7 +109,9 @@ const Wishlist = () => {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 };

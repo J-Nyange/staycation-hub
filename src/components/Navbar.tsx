@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home, FileText, PenSquare } from "lucide-react";
+import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home, FileText, PenSquare, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useUser, useClerk, SignInButton, SignUpButton } from "@clerk/clerk-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserRole } from "@/hooks/useUserRole";
 import AddPropertyModal from "@/components/AddPropertyModal";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
@@ -18,6 +19,7 @@ const Navbar = () => {
   const { user } = useUser();
   const { signOut } = useClerk();
   const { getDisplayName } = useUserProfile();
+  const { isAdmin, isModerator } = useUserRole();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +143,15 @@ const Navbar = () => {
                       <PenSquare className="w-4 h-4 mr-2" />
                       Write a Post
                     </DropdownMenuItem>
+                    {(isAdmin || isModerator) && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                          <Shield className="w-4 h-4 mr-2" />
+                          Admin Dashboard
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="w-4 h-4 mr-2" />
