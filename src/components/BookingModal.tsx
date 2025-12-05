@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,6 +18,8 @@ import { Link } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import StripePaymentForm from "@/components/StripePaymentForm";
+import PaystackPaymentForm from "@/components/PaystackPaymentForm";
+import PaymentMethodSelector from "@/components/PaymentMethodSelector";
 import { Property } from "@/hooks/useProperties";
 
 // Initialize Stripe
@@ -49,6 +50,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   // Payment State
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paystack'>('stripe');
   const [clientSecret, setClientSecret] = useState("");
   const [bookingId, setBookingId] = useState("");
 
@@ -91,25 +93,27 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
 
       setBookingId(booking.id);
 
-      // Create payment intent
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-        'create-payment-intent',
-        {
-          body: {
-            property_id: property.id,
-            check_in: checkIn.toISOString().split('T')[0],
-            check_out: checkOut.toISOString().split('T')[0],
-            guests: totalGuests,
-            total_price: totalPrice,
-            special_requests: specialRequests || null,
-            booking_id: booking.id,
-          },
-        }
-      );
+      if (paymentMethod === 'stripe') {
+        // Create payment intent for Stripe
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+          'create-payment-intent',
+          {
+            body: {
+              property_id: property.id,
+              check_in: checkIn.toISOString().split('T')[0],
+              check_out: checkOut.toISOString().split('T')[0],
+              guests: totalGuests,
+              total_price: totalPrice,
+              special_requests: specialRequests || null,
+              booking_id: booking.id,
+            },
+          }
+        );
 
-      if (paymentError) throw paymentError;
+        if (paymentError) throw paymentError;
+        setClientSecret(paymentData.clientSecret);
+      }
 
-      setClientSecret(paymentData.clientSecret);
       setCurrentTab('payment');
 
       toast({
@@ -145,6 +149,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setBookingId('');
     setClientSecret('');
     setAcceptedTerms(false);
+    setPaymentMethod('stripe');
   };
 
   useEffect(() => {
@@ -166,7 +171,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               <Info className="mr-2 h-4 w-4" />
               Booking Details
             </TabsTrigger>
-            <TabsTrigger value="payment" disabled={!clientSecret}>
+            <TabsTrigger value="payment" disabled={!bookingId}>
               <CreditCard className="mr-2 h-4 w-4" />
               Payment
             </TabsTrigger>
@@ -206,7 +211,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                         className="pointer-events-auto"
                       />
                     </PopoverContent>
-                  </Popover>Now 
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -376,6 +381,9 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 />
               </div>
 
+              {/* Payment Method Selection */}
+              <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
+
               {checkIn && checkOut && (
                 <div className="bg-muted/50 p-6 rounded-xl space-y-3 border border-border">
                   <div className="flex justify-between text-base">
@@ -459,13 +467,21 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           </TabsContent>
 
           <TabsContent value="payment" className="space-y-0">
-            {clientSecret && (
+            {paymentMethod === 'stripe' && clientSecret && (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <StripePaymentForm 
                   onSuccess={handlePaymentSuccess}
                   totalPrice={totalPrice}
                 />
               </Elements>
+            )}
+            {paymentMethod === 'paystack' && bookingId && user?.primaryEmailAddress?.emailAddress && (
+              <PaystackPaymentForm
+                onSuccess={handlePaymentSuccess}
+                totalPrice={totalPrice}
+                email={user.primaryEmailAddress.emailAddress}
+                bookingId={bookingId}
+              />
             )}
           </TabsContent>
         </Tabs>
