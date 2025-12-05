@@ -25,6 +25,9 @@ export default defineConfig(({ mode }) => ({
       srcDir: 'src',
       filename: 'service-worker.ts',
       strategies: 'injectManifest',
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+      },
       manifest: {
         name: 'Lukemanbnb Kenya',
         short_name: 'Lukemanbnb',
