@@ -28,7 +28,7 @@ const PropertyMap = ({
 
   useEffect(() => {
     // Fix for default marker icons not showing in production
-    delete L.Icon.Default.prototype._getIconUrl;
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -39,7 +39,6 @@ const PropertyMap = ({
   return (
     <div className="relative w-full h-full">
       <MapContainer
-        // @ts-ignore - react-leaflet type issue
         center={center}
         zoom={zoom}
         className="w-full h-full rounded-lg"
@@ -48,7 +47,6 @@ const PropertyMap = ({
       >
         {/* OpenStreetMap Tiles - Free, no API key required */}
         <TileLayer
-          // @ts-ignore - react-leaflet type issue
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
@@ -122,3 +120,4 @@ const PropertyMap = ({
 };
 
 export default PropertyMap;
+
