@@ -59,7 +59,7 @@ export default function StripePaymentForm({ onSuccess, totalPrice }: StripePayme
       <div className="bg-muted p-4 rounded-lg">
         <div className="flex justify-between font-semibold text-lg">
           <span>Total Amount</span>
-          <span>${totalPrice.toFixed(2)}</span>
+          <span>KES {totalPrice.toFixed(2)}</span>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export default function StripePaymentForm({ onSuccess, totalPrice }: StripePayme
         disabled={!stripe || isProcessing}
       >
         {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isProcessing ? 'Processing Payment...' : `Pay $${totalPrice.toFixed(2)}`}
+        {isProcessing ? 'Processing Payment...' : `Pay KES ${totalPrice.toFixed(2)}`}
       </Button>
 
       <p className="text-xs text-muted-foreground text-center">

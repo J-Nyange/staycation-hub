@@ -78,7 +78,7 @@ export const AvailabilityCalendar = ({
       />
       <div className="text-sm text-muted-foreground">
         <p className="font-semibold">
-          ${pricePerNight.toFixed(2)} <span className="font-normal">per night</span>
+          KES {pricePerNight.toFixed(2)} <span className="font-normal">per night</span>
         </p>
       </div>
     </div>

@@ -388,11 +388,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 <div className="bg-muted/50 p-6 rounded-xl space-y-3 border border-border">
                   <div className="flex justify-between text-base">
                     <span>KES {property.price_per_night} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                    <span className="font-semibold">${totalPrice}</span>
+                    <span className="font-semibold">KES {totalPrice}</span>
                   </div>
                   <div className="border-t border-border pt-3 flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-primary">${totalPrice}</span>
+                    <span className="text-primary">KES {totalPrice}</span>
                   </div>
                 </div>
               )}

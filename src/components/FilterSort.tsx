@@ -218,8 +218,8 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
                       className="py-4"
                     />
                     <div className="flex items-center justify-between">
-                      <span>${filters.priceRange[0]}</span>
-                      <span>${filters.priceRange[1]}</span>
+                      <span>KES {filters.priceRange[0]}</span>
+                      <span>KES {filters.priceRange[1]}</span>
                     </div>
                   </div>
                 </div>

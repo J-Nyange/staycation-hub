@@ -53,7 +53,7 @@ export const RefundCalculator = ({ checkInDate, totalPrice, cancellationPolicy }
           <h4 className="font-semibold mb-2">Refund Calculation</h4>
           <div className="flex justify-between items-center mb-2">
             <span className="text-muted-foreground">Original amount:</span>
-            <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+            <span className="font-semibold">KES {totalPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-muted-foreground">Refund percentage:</span>
@@ -61,7 +61,7 @@ export const RefundCalculator = ({ checkInDate, totalPrice, cancellationPolicy }
           </div>
           <div className="flex justify-between items-center pt-2 border-t">
             <span className="font-semibold">You will receive:</span>
-            <span className="text-lg font-bold text-primary">${refund.amount.toFixed(2)}</span>
+            <span className="text-lg font-bold text-primary">KES {refund.amount.toFixed(2)}</span>
           </div>
         </div>
 
