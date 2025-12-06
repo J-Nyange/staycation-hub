@@ -100,7 +100,7 @@ const PropertyComparison = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-2xl font-bold text-primary">
-                    ${property.price_per_night}
+                    KES {property.price_per_night}
                     <span className="text-sm text-muted-foreground font-normal">/night</span>
                   </div>
                   {property.rating && (
@@ -165,7 +165,7 @@ const PropertyComparison = () => {
                     <TableCell className="font-medium">Price per night</TableCell>
                     {properties.map((property) => (
                       <TableCell key={property.id} className="text-primary font-bold">
-                        ${property.price_per_night}
+                        KES {property.price_per_night}
                       </TableCell>
                     ))}
                   </TableRow>

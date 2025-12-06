@@ -178,7 +178,7 @@ const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsM
                   <div className="bg-muted/50 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <span className="text-3xl font-bold">${property.price_per_night}</span>
+                        <span className="text-3xl font-bold">KES {property.price_per_night}</span>
                         <span className="text-muted-foreground ml-1">/ night</span>
                       </div>
                       <div className="flex items-center space-x-1">

@@ -211,7 +211,7 @@ export default function OwnerBookings() {
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span>${booking.total_price.toFixed(2)}</span>
+                          <span>KES {booking.total_price.toFixed(2)}</span>
                         </div>
                       </div>
 

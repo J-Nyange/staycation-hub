@@ -142,7 +142,7 @@ export default function BookingConfirmation() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Amount Paid</p>
-                  <p className="font-semibold text-lg">${booking.total_price}</p>
+                  <p className="font-semibold text-lg">KES {booking.total_price}</p>
                 </div>
               </div>
 

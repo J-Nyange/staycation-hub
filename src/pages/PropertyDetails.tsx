@@ -276,7 +276,7 @@ const PropertyDetails = () => {
             <div className="sticky top-24 bg-card p-6 rounded-2xl shadow-luxury">
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-3xl font-bold">${property.price_per_night}</span>
+                  <span className="text-3xl font-bold">KES {property.price_per_night}</span>
                   <span className="text-muted-foreground">/ night</span>
                 </div>
               </div>
