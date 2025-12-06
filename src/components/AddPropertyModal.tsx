@@ -195,7 +195,7 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Price per Night (USD) *</Label>
+              <Label htmlFor="price">Price per Night (KES) *</Label>
               <Input
                 id="price"
                 type="number"

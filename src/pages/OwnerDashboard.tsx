@@ -82,7 +82,7 @@ export default function OwnerDashboard() {
                   <Skeleton className="h-8 w-24" />
                 ) : (
                   <div className="text-2xl font-bold">
-                    ${metrics.totalRevenue.toLocaleString(undefined, {
+                    KES {metrics.totalRevenue.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -106,7 +106,7 @@ export default function OwnerDashboard() {
                   <Skeleton className="h-8 w-24" />
                 ) : (
                   <div className="text-2xl font-bold">
-                    ${metrics.totalPendingPayout.toLocaleString(undefined, {
+                    KES {metrics.totalPendingPayout.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -151,7 +151,7 @@ export default function OwnerDashboard() {
                   <Skeleton className="h-8 w-16" />
                 ) : (
                   <div className="text-2xl font-bold">
-                    ${metrics.avgBookingValue.toLocaleString(undefined, {
+                    KES {metrics.avgBookingValue.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -306,7 +306,7 @@ export default function OwnerDashboard() {
                         }
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        $
+                        KES
                         {Number(
                           [...analytics].sort(
                             (a, b) =>

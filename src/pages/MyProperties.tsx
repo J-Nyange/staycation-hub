@@ -168,7 +168,7 @@ const MyProperties = () => {
                         {property.location}
                       </p>
                       <p className="text-lg font-bold text-primary mb-4">
-                        ${property.price_per_night}/night
+                        KES {property.price_per_night}/night
                       </p>
 
                         <div className="flex flex-col gap-2">

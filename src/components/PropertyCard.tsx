@@ -196,7 +196,7 @@ const PropertyCard = (property: PropertyCardProps) => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-2xl font-bold text-foreground">${price}</span>
+                <span className="text-2xl font-bold text-foreground">KES. {price}</span>
                 <span className="text-muted-foreground text-sm ml-1">/ night</span>
               </div>
               <Button 
