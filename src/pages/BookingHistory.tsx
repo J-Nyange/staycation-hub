@@ -199,7 +199,7 @@ const BookingHistory = () => {
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <p className="text-muted-foreground text-xs">Total</p>
-                              <p className="font-medium">${booking.total_price}</p>
+                              <p className="font-medium">KES {booking.total_price}</p>
                             </div>
                           </div>
                         </div>
@@ -239,7 +239,7 @@ const BookingHistory = () => {
                         {booking.status === "cancelled" && booking.refund_amount && booking.refund_amount > 0 && (
                           <div className="mt-4 p-3 bg-muted rounded-lg">
                             <p className="text-sm">
-                              <span className="font-medium">Refund:</span> ${booking.refund_amount.toFixed(2)} ({booking.refund_status})
+                              <span className="font-medium">Refund:</span> KES {booking.refund_amount.toFixed(2)} ({booking.refund_status})
                             </p>
                             {booking.cancellation_reason && (
                               <p className="text-sm text-muted-foreground mt-1">

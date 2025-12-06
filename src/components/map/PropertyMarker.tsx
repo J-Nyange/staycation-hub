@@ -100,7 +100,7 @@ const PropertyMarker = ({ property }: PropertyMarkerProps) => {
 
                 <div className="text-right">
                   <span className="text-lg font-bold text-primary">
-                    ${property.price_per_night}
+                    KES {property.price_per_night}
                   </span>
                   <span className="text-xs text-muted-foreground">/night</span>
                 </div>

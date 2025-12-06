@@ -88,7 +88,7 @@ export function AdminPropertyTable({ properties, onUpdateProperty }: AdminProper
                 <TableCell className="max-w-[150px] truncate">
                   {property.location}
                 </TableCell>
-                <TableCell>${property.price_per_night}/night</TableCell>
+                <TableCell>KES {property.price_per_night}/night</TableCell>
                 <TableCell>
                   <Badge variant="outline">{property.category}</Badge>
                 </TableCell>

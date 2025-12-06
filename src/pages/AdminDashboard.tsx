@@ -85,7 +85,7 @@ function AdminDashboardContent() {
                   <div key={property.id} className="flex justify-between items-center">
                     <span className="truncate max-w-[200px]">{property.title}</span>
                     <span className="text-sm text-muted-foreground">
-                      ${property.price_per_night}/night
+                      KES {property.price_per_night}/night
                     </span>
                   </div>
                 ))}
