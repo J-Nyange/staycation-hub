@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBookingActions } from "@/hooks/useBookingActions";
-import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle, Phone } from "lucide-react";
 import { format } from "date-fns";
 
 export default function OwnerBookings() {
@@ -29,7 +29,7 @@ export default function OwnerBookings() {
         .select(`
           *,
           property:properties!inner(id, title, owner_id),
-          profile:profiles!bookings_user_id_fkey(first_name, last_name, avatar_url)
+          profile:profiles!bookings_user_id_fkey(first_name, last_name, avatar_url, phone)
         `)
         .eq("property.owner_id", user.id)
         .order("created_at", { ascending: false });
@@ -52,7 +52,7 @@ export default function OwnerBookings() {
           booking:bookings!inner(
             *,
             property:properties!inner(owner_id),
-            profile:profiles!bookings_user_id_fkey(first_name, last_name)
+            profile:profiles!bookings_user_id_fkey(first_name, last_name, phone)
           )
         `)
         .eq("booking.property.owner_id", user.id)
@@ -194,6 +194,12 @@ export default function OwnerBookings() {
                           <p className="text-sm text-muted-foreground">
                             Guest: {booking.profile.first_name} {booking.profile.last_name}
                           </p>
+                          {booking.profile.phone && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3" />
+                              {booking.profile.phone}
+                            </p>
+                          )}
                         </div>
                         {getStatusBadge(booking.status)}
                       </div>
