@@ -178,6 +178,7 @@ export type Database = {
           check_out: string
           commission_amount: number | null
           created_at: string
+          expires_at: string | null
           guests: number
           id: string
           modification_count: number | null
@@ -202,6 +203,7 @@ export type Database = {
           check_out: string
           commission_amount?: number | null
           created_at?: string
+          expires_at?: string | null
           guests: number
           id?: string
           modification_count?: number | null
@@ -226,6 +228,7 @@ export type Database = {
           check_out?: string
           commission_amount?: number | null
           created_at?: string
+          expires_at?: string | null
           guests?: number
           id?: string
           modification_count?: number | null

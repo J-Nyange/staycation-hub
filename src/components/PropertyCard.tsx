@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Heart, MapPin, Star, Users, Wifi, Car, Eye, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -167,9 +167,11 @@ const PropertyCard = (property: PropertyCardProps) => {
         <div className="p-6">
           {/* Header */}
           <div className="mb-4">
-            <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-              {property.title}
-            </h3>
+            <Link to={`/properties/${property.id}`}>
+              <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors cursor-pointer hover:underline">
+                {property.title}
+              </h3>
+            </Link>
             <div className="flex items-center text-muted-foreground text-sm">
               <MapPin className="w-4 h-4 mr-1" />
               {property.location}

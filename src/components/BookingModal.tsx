@@ -11,8 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Info, CreditCard, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { Info, CreditCard, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus, Clock } from "lucide-react";
+import { format, differenceInDays, addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
@@ -24,6 +24,8 @@ import { Property } from "@/hooks/useProperties";
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+
+const BOOKING_TIMEOUT_MINUTES = 15;
 
 interface BookingModalProps {
   property: Property;
@@ -53,10 +55,42 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paystack'>('stripe');
   const [clientSecret, setClientSecret] = useState("");
   const [bookingId, setBookingId] = useState("");
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(BOOKING_TIMEOUT_MINUTES * 60);
 
   const totalGuests = guests.adults + guests.children + guests.infants;
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const totalPrice = nights * (property.price_per_night || 0);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!expiresAt || currentTab !== 'payment') return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const remaining = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        toast({
+          variant: "destructive",
+          title: "Booking Expired",
+          description: "Your booking session has expired. Please try again.",
+        });
+        onOpenChange(false);
+        resetForm();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiresAt, currentTab, onOpenChange, toast]);
+
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleGuestChange = (type: keyof typeof guests, increment: boolean) => {
     setGuests(prev => ({
@@ -72,7 +106,10 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setIsLoading(true);
 
     try {
-      // Create booking record
+      // Calculate expiration time (15 minutes from now)
+      const expirationTime = addMinutes(new Date(), BOOKING_TIMEOUT_MINUTES);
+
+      // Create booking record with expires_at
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -85,6 +122,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           special_requests: specialRequests || null,
           status: 'pending',
           payment_status: 'pending',
+          expires_at: expirationTime.toISOString(),
         })
         .select()
         .single();
@@ -92,6 +130,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
       if (bookingError) throw bookingError;
 
       setBookingId(booking.id);
+      setExpiresAt(expirationTime);
+      setTimeRemaining(BOOKING_TIMEOUT_MINUTES * 60);
 
       if (paymentMethod === 'stripe') {
         // Create payment intent for Stripe
@@ -118,7 +158,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
 
       toast({
         title: "Booking Details Saved",
-        description: "Please complete payment to confirm your booking.",
+        description: `Please complete payment within ${BOOKING_TIMEOUT_MINUTES} minutes to confirm your booking.`,
       });
     } catch (error: any) {
       toast({
@@ -150,6 +190,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setClientSecret('');
     setAcceptedTerms(false);
     setPaymentMethod('stripe');
+    setExpiresAt(null);
+    setTimeRemaining(BOOKING_TIMEOUT_MINUTES * 60);
   };
 
   useEffect(() => {
@@ -409,78 +451,111 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                       <span>Full refund if canceled 7 days before check-in. Cancel within 7 days for 50% refund.</span>
                     )}
                     {property.cancellation_policy === 'strict' && (
-                      <span>50% refund if canceled 30 days before check-in. No refund within 30 days of check-in.</span>
+                      <span>50% refund if canceled 7 days before check-in. No refund within 7 days.</span>
                     )}
-                    {' '}
-                    <Link to="/cancellation-policy" className="text-primary hover:underline">
-                      Learn more
-                    </Link>
                   </AlertDescription>
                 </Alert>
               )}
 
-              <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50 border border-border">
-                <Checkbox 
-                  id="terms" 
+              {/* Payment Timeout Notice */}
+              <Alert className="border-yellow-500/20 bg-yellow-500/10">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-sm text-yellow-700">
+                  <strong className="font-semibold">Important: </strong>
+                  You will have {BOOKING_TIMEOUT_MINUTES} minutes to complete payment after submitting your booking details. 
+                  If payment is not completed, the booking will be automatically cancelled.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="terms"
                   checked={acceptedTerms}
                   onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                  className="mt-1"
                 />
-                <label 
-                  htmlFor="terms" 
+                <label
+                  htmlFor="terms"
                   className="text-sm leading-relaxed cursor-pointer"
                 >
-                  I agree to the{' '}
-                  <Link to="/terms-of-service" target="_blank" className="text-primary hover:underline font-medium">
+                  I agree to the{" "}
+                  <Link to="/terms-of-service" className="text-primary hover:underline">
                     Terms of Service
-                  </Link>
-                  ,{' '}
-                  <Link to="/cancellation-policy" target="_blank" className="text-primary hover:underline font-medium">
-                    Cancellation Policy
-                  </Link>
-                  , and{' '}
-                  <Link to="/privacy-policy" target="_blank" className="text-primary hover:underline font-medium">
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy-policy" className="text-primary hover:underline">
                     Privacy Policy
                   </Link>
+                  , and understand the cancellation policy.
                 </label>
               </div>
 
-              {!acceptedTerms && checkIn && checkOut && (
-                <Alert variant="destructive" className="border-destructive/50">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Please accept the terms and conditions to continue with your booking.
-                  </AlertDescription>
-                </Alert>
-              )}
-
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-semibold"
-                size="lg"
-                disabled={!checkIn || !checkOut || !acceptedTerms || isLoading || totalGuests > property.guests}
+                className="w-full h-12 text-lg"
+                disabled={!checkIn || !checkOut || totalGuests > property.guests || !acceptedTerms || isLoading}
               >
-                {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                Continue to Payment
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Continue to Payment"
+                )}
               </Button>
             </form>
           </TabsContent>
 
-          <TabsContent value="payment" className="space-y-0">
+          <TabsContent value="payment" className="space-y-6">
+            {/* Countdown Timer */}
+            {expiresAt && (
+              <Alert className={cn(
+                "border-2",
+                timeRemaining <= 60 
+                  ? "border-red-500 bg-red-500/10" 
+                  : timeRemaining <= 300 
+                    ? "border-yellow-500 bg-yellow-500/10" 
+                    : "border-primary/20 bg-primary/5"
+              )}>
+                <Clock className={cn(
+                  "h-5 w-5",
+                  timeRemaining <= 60 
+                    ? "text-red-500" 
+                    : timeRemaining <= 300 
+                      ? "text-yellow-600" 
+                      : "text-primary"
+                )} />
+                <AlertDescription className="text-base">
+                  <strong className="font-semibold">Time remaining to complete payment: </strong>
+                  <span className={cn(
+                    "font-mono text-lg font-bold ml-2",
+                    timeRemaining <= 60 
+                      ? "text-red-500" 
+                      : timeRemaining <= 300 
+                        ? "text-yellow-600" 
+                        : "text-primary"
+                  )}>
+                    {formatTimeRemaining(timeRemaining)}
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {paymentMethod === 'stripe' && clientSecret && (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <StripePaymentForm 
-                  onSuccess={handlePaymentSuccess}
+                <StripePaymentForm
                   totalPrice={totalPrice}
+                  onSuccess={handlePaymentSuccess}
                 />
               </Elements>
             )}
+
             {paymentMethod === 'paystack' && bookingId && user?.primaryEmailAddress?.emailAddress && (
               <PaystackPaymentForm
-                onSuccess={handlePaymentSuccess}
+                bookingId={bookingId}
                 totalPrice={totalPrice}
                 email={user.primaryEmailAddress.emailAddress}
-                bookingId={bookingId}
+                onSuccess={handlePaymentSuccess}
               />
             )}
           </TabsContent>
