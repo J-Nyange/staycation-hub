@@ -45,19 +45,19 @@ const ImageCarousel = ({ images, alt, className = "" }: ImageCarouselProps) => {
           <Button
             variant="secondary"
             size="icon"
-            className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background shadow-card"
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 shadow-lg border border-gray-200/50 transition-all duration-200 hover:scale-110 h-10 w-10"
             onClick={prevImage}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
           
           <Button
             variant="secondary"
             size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background shadow-card"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 shadow-lg border border-gray-200/50 transition-all duration-200 hover:scale-110 h-10 w-10"
             onClick={nextImage}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </Button>
 
           {/* Dots Indicator */}
