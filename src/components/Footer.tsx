@@ -5,8 +5,7 @@ const Footer = () => {
   const quickLinks = [
     { name: "About Us", href: "/about" },
     { name: "Blog", href: "/blog" },
-    { name: "Properties", href: "/properties" },
-    { name: "How It Works", href: "/how-it-works" },
+    { name: "Properties", href: "/" },
     { name: "Contact", href: "/contacts" },
   ];
 
@@ -14,7 +13,6 @@ const Footer = () => {
     { name: "Airbnb Apartments", href: "/airbnb" },
     { name: "Luxury Villas", href: "/villas" },
     { name: "Cozy Homestays", href: "/homestays" },
-    { name: "Special Offers", href: "/offers" },
   ];
 
   const legal = [
