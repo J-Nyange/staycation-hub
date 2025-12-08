@@ -54,7 +54,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
             <YAxis
               className="text-xs"
               tick={{ fill: "hsl(var(--muted-foreground))" }}
-              tickFormatter={(value) => `$${value.toLocaleString()}`}
+              tickFormatter={(value) => `KES ${value.toLocaleString()}`}
             />
             <Tooltip
               contentStyle={{
@@ -62,7 +62,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "8px",
               }}
-              formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
+              formatter={(value: number) => [`KES ${value.toLocaleString()}`, "Revenue"]}
             />
             <Legend />
             <Line

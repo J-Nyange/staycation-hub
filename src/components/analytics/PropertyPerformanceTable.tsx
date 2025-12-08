@@ -142,7 +142,7 @@ export const PropertyPerformanceTable = ({
                     {property.property_title}
                   </TableCell>
                   <TableCell>
-                    ${Number(property.total_revenue).toLocaleString()}
+                    KES {Number(property.total_revenue).toLocaleString()}
                   </TableCell>
                   <TableCell>{property.confirmed_bookings}</TableCell>
                   <TableCell>
