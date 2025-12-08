@@ -85,7 +85,22 @@ export default function PaystackPaymentForm({
       });
       return;
     }
-    initializePayment({ onSuccess: onPaystackSuccess, onClose: onPaystackClose });
+    
+    try {
+      // The initializePayment function opens a Paystack popup
+      // If this fails silently, the popup may be blocked by the browser
+      initializePayment({ 
+        onSuccess: onPaystackSuccess, 
+        onClose: onPaystackClose 
+      });
+    } catch (error: any) {
+      console.error('Paystack initialization error:', error);
+      toast({
+        variant: "destructive",
+        title: "Payment Error",
+        description: error.message || "Failed to initialize payment. Please try again or check if popups are blocked.",
+      });
+    }
   };
 
   return (

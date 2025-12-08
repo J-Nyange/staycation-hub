@@ -29,28 +29,32 @@ export interface Property {
   instant_book?: boolean;
 }
 
-export const useProperties = (category?: string) => {
+export type PropertyCategory = 'airbnb' | 'villa' | 'homestay' | 'all';
+
+export const useProperties = (category?: PropertyCategory | string) => {
   return useQuery({
     queryKey: ['properties', category],
     queryFn: async () => {
-      // First get properties
-      let query = supabase
+      // Fetch all active properties first
+      const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (category && category !== 'all') {
-        query = query.eq('category', category);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
         throw error;
       }
 
-      const properties = data as Property[];
+      let properties = data as Property[];
+      
+      // Apply client-side category filtering
+      if (category && category !== 'all') {
+        const categoryLower = category.toLowerCase();
+        properties = properties.filter(p => 
+          p.category?.toLowerCase() === categoryLower
+        );
+      }
       
       // Then get ratings for all properties in one batch
       if (properties.length > 0) {

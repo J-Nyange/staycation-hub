@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,7 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { SlidersHorizontal, Star } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
-import { useAdvancedSearch, AdvancedSearchParams } from "@/hooks/useAdvancedSearch";
+// Local filtering is now used instead of useAdvancedSearch
 
 export type SortOption = "default" | "price-low-high" | "price-high-low";
 
@@ -79,43 +78,91 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
   // Get all unique property types
   const allPropertyTypes = [...new Set(properties.map(p => p.category))];
 
-  // Build search params from filters
-  const searchParams: AdvancedSearchParams = {
-    location: filters.location || undefined,
-    guests: filters.guests > 1 ? filters.guests : undefined,
-    priceRange: filters.priceRange,
-    propertyType: filters.propertyType.length > 0 ? filters.propertyType : undefined,
-    amenities: filters.amenities.length > 0 ? filters.amenities : undefined,
-    instantBook: filters.instantBook || undefined,
-    minRating: filters.minRating > 0 ? filters.minRating : undefined,
-    bedroomsMin: filters.bedroomsMin > 0 ? filters.bedroomsMin : undefined,
-  };
-
-  // Use advanced search hook
-  const { data: searchResults, isLoading } = useAdvancedSearch(searchParams);
-
-  // Apply sorting to search results
+  // Apply filters locally to the passed properties instead of fetching from database
   useEffect(() => {
-    if (!searchResults) {
+    if (!properties || properties.length === 0) {
       onFilterChange([]);
       return;
     }
 
-    let sortedResults = [...searchResults];
-    
+    let filteredResults = [...properties];
+
+    // Price range filter
+    if (filters.priceRange) {
+      filteredResults = filteredResults.filter(p => 
+        p.price_per_night >= filters.priceRange[0] && 
+        p.price_per_night <= filters.priceRange[1]
+      );
+    }
+
+    // Guest capacity filter
+    if (filters.guests > 1) {
+      filteredResults = filteredResults.filter(p => p.guests >= filters.guests);
+    }
+
+    // Location filter
+    if (filters.location) {
+      filteredResults = filteredResults.filter(p => 
+        p.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    // Property type filter
+    if (filters.propertyType.length > 0) {
+      filteredResults = filteredResults.filter(p => 
+        filters.propertyType.includes(p.category)
+      );
+    }
+
+    // Amenities filter
+    if (filters.amenities.length > 0) {
+      filteredResults = filteredResults.filter(p => 
+        filters.amenities.every(amenity => 
+          p.amenities && p.amenities.includes(amenity)
+        )
+      );
+    }
+
+    // Instant book filter
+    if (filters.instantBook) {
+      filteredResults = filteredResults.filter(p => p.instant_book === true);
+    }
+
+    // Min rating filter
+    if (filters.minRating > 0) {
+      filteredResults = filteredResults.filter(p => 
+        (p.rating || 0) >= filters.minRating
+      );
+    }
+
+    // Bedrooms filter
+    if (filters.bedroomsMin > 0) {
+      filteredResults = filteredResults.filter(p => 
+        (p.bedrooms || 0) >= filters.bedroomsMin
+      );
+    }
+
+    // Bathrooms filter
+    if (filters.bathroomsMin > 0) {
+      filteredResults = filteredResults.filter(p => 
+        (p.bathrooms || 0) >= filters.bathroomsMin
+      );
+    }
+
+    // Apply sorting
     switch (filters.sortBy) {
       case "price-low-high":
-        sortedResults.sort((a, b) => a.price_per_night - b.price_per_night);
+        filteredResults.sort((a, b) => a.price_per_night - b.price_per_night);
         break;
       case "price-high-low":
-        sortedResults.sort((a, b) => b.price_per_night - a.price_per_night);
+        filteredResults.sort((a, b) => b.price_per_night - a.price_per_night);
         break;
       default:
         break;
     }
     
-    onFilterChange(sortedResults);
-  }, [searchResults, filters.sortBy, onFilterChange]);
+    onFilterChange(filteredResults);
+  }, [properties, filters, onFilterChange]);
 
   const handlePriceChange = (value: number[]) => {
     setFilters(prev => ({ ...prev, priceRange: [value[0], value[1]] }));
@@ -452,7 +499,7 @@ const FilterSort = ({ properties, onFilterChange, className = "" }: FilterSortPr
         
         {/* Active Filters Summary */}
         <div className="text-sm text-muted-foreground">
-          {isLoading ? 'Loading...' : `${searchResults?.length || 0} properties`}
+          {`${properties.length} properties`}
           {filters.location && ` • ${filters.location}`}
           {filters.guests > 1 && ` • ${filters.guests} guests+`}
           {filters.propertyType.length > 0 && ` • ${filters.propertyType.length} types`}

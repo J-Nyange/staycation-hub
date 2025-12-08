@@ -41,9 +41,9 @@ export const useAdvancedSearch = (params: AdvancedSearchParams) => {
         query = query.lte('price_per_night', params.priceRange[1]);
       }
 
-      // Property type
+      // Property type (category filter)
       if (params.propertyType && params.propertyType.length > 0) {
-        query = query.in('property_type', params.propertyType);
+        query = query.in('category', params.propertyType);
       }
 
       // Instant book

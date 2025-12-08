@@ -123,7 +123,7 @@ export function AdminPropertyTable({ properties, onUpdateProperty }: AdminProper
                   />
                 </TableCell>
                 <TableCell>
-                  <Link to={`/property/${property.id}`}>
+                  <Link to={`/properties/${property.id}`}>
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4" />
                     </Button>

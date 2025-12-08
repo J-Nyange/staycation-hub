@@ -11,6 +11,43 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import { generateBlogPostSchema, generateBreadcrumbSchema } from "@/lib/structuredData";
 
+/**
+ * Formats raw blog content into well-structured paragraphs.
+ * - Splits content by double newlines to create paragraphs
+ * - Handles single newlines within paragraphs
+ * - Preserves markdown formatting
+ */
+const formatContentToParagraphs = (content: string): string => {
+  if (!content) return "";
+  
+  // First, normalize line endings
+  let formatted = content.replace(/\r\n/g, "\n");
+  
+  // If the content doesn't have explicit paragraph breaks (double newlines),
+  // try to intelligently add them based on common patterns
+  const hasExplicitParagraphs = formatted.includes("\n\n");
+  
+  if (!hasExplicitParagraphs) {
+    // Split sentences that end with periods followed by spaces and capital letters
+    // This helps convert run-on text into paragraphs
+    formatted = formatted
+      // Add paragraph breaks after sentences that look like paragraph endings
+      .replace(/([.!?])\s+([A-Z])/g, "$1\n\n$2")
+      // Add breaks before common paragraph starters
+      .replace(/\n(#{1,6}\s)/g, "\n\n$1") // Markdown headers
+      .replace(/\n(-\s)/g, "\n\n$1") // List items
+      .replace(/\n(\d+\.\s)/g, "\n\n$1"); // Numbered lists
+  }
+  
+  // Clean up excessive newlines (more than 2 in a row)
+  formatted = formatted.replace(/\n{3,}/g, "\n\n");
+  
+  // Ensure proper spacing around headers
+  formatted = formatted.replace(/(#{1,6}.*?)\n(?!\n)/g, "$1\n\n");
+  
+  return formatted.trim();
+};
+
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -174,8 +211,24 @@ const BlogPost = () => {
           </header>
 
           {/* Content */}
-          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline prose-img:rounded-2xl prose-strong:font-semibold">
-            <ReactMarkdown>{post.content}</ReactMarkdown>
+          <div className="prose prose-lg lg:prose-xl max-w-none
+            prose-headings:font-bold prose-headings:text-foreground
+            prose-h1:text-3xl prose-h1:mt-8 prose-h1:mb-4
+            prose-h2:text-2xl prose-h2:mt-6 prose-h2:mb-3 prose-h2:border-b prose-h2:border-border prose-h2:pb-2
+            prose-h3:text-xl prose-h3:mt-5 prose-h3:mb-2
+            prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-6
+            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+            prose-img:rounded-2xl prose-img:shadow-lg
+            prose-strong:font-semibold prose-strong:text-foreground
+            prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:italic prose-blockquote:text-muted-foreground
+            prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
+            prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
+            prose-li:mb-2 prose-li:text-foreground/90
+            prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono
+            prose-pre:bg-muted prose-pre:rounded-xl prose-pre:p-4 prose-pre:overflow-x-auto
+            dark:prose-invert
+          ">
+            <ReactMarkdown>{formatContentToParagraphs(post.content)}</ReactMarkdown>
           </div>
 
           {/* Footer */}

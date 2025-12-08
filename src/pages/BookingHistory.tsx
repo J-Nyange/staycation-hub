@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,9 @@ import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CancellationModal } from "@/components/booking/CancellationModal";
 import { ModificationModal } from "@/components/booking/ModificationModal";
+import { ResumePaymentModal } from "@/components/booking/ResumePaymentModal";
+import { CreditCard, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Booking {
   id: string;
@@ -41,9 +44,43 @@ interface Booking {
 const BookingHistory = () => {
   const { user } = useUser();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
   const [modifyingBooking, setModifyingBooking] = useState<Booking | null>(null);
+  const [resumingPaymentBooking, setResumingPaymentBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+
+  // Mutation to cancel pending bookings
+  const cancelPendingBookingMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      // Update booking status to cancelled
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled',
+          payment_status: 'failed', // Must use 'failed' - constraint: ('pending', 'paid', 'refunded', 'failed')
+          cancellation_reason: 'User cancelled before payment',
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Booking Cancelled",
+        description: "Your pending booking has been cancelled. The property is now available for those dates.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['bookings', user?.id] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Cancellation Failed",
+        description: error.message || "Failed to cancel the booking. Please try again.",
+      });
+    },
+  });
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings', user?.id],
@@ -295,6 +332,42 @@ const BookingHistory = () => {
                               </div>
                             )}
 
+                            {/* Resume Payment and Cancel buttons for pending bookings */}
+                            {booking.status === "pending" && booking.payment_status === "pending" && (
+                              <div className="mt-4 space-y-3">
+                                {booking.expires_at && new Date(booking.expires_at) > new Date() && (
+                                  <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-500/10 p-2 rounded">
+                                    <Clock className="h-4 w-4" />
+                                    Complete payment before booking expires
+                                  </div>
+                                )}
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => setResumingPaymentBooking(booking)}
+                                    className="flex-1"
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Resume Payment
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => cancelPendingBookingMutation.mutate(booking.id)}
+                                    disabled={cancelPendingBookingMutation.isPending}
+                                    className="flex-1"
+                                  >
+                                    {cancelPendingBookingMutation.isPending ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 mr-2" />
+                                    )}
+                                    Cancel Booking
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
                             {booking.status === "confirmed" && new Date(booking.check_in) > new Date() && (
                               <div className="flex gap-2 mt-4">
                                 <Button 
@@ -369,6 +442,14 @@ const BookingHistory = () => {
           open={!!modifyingBooking}
           onOpenChange={(open) => !open && setModifyingBooking(null)}
           booking={modifyingBooking}
+        />
+      )}
+
+      {resumingPaymentBooking && (
+        <ResumePaymentModal
+          open={!!resumingPaymentBooking}
+          onOpenChange={(open) => !open && setResumingPaymentBooking(null)}
+          booking={resumingPaymentBooking}
         />
       )}
 
