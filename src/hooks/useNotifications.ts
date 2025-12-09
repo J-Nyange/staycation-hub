@@ -22,6 +22,18 @@ export const useNotifications = () => {
     queryKey: ["notifications", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      // Cleanup: remove notifications older than 24 hours for this user
+      try {
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        await supabase
+          .from('notifications')
+          .delete()
+          .lt('created_at', cutoff)
+          .eq('user_id', user.id);
+      } catch (e) {
+        // non-fatal cleanup error
+        // console.warn('notification cleanup failed', e);
+      }
       const { data, error } = await supabase
         .from("notifications")
         .select("*")

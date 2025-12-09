@@ -43,18 +43,17 @@ export const usePropertyAvailability = (propertyId: string) => {
         .select('check_in, check_out, status')
         .eq('property_id', propertyId)
         .in('status', ['confirmed', 'pending'])
-        .lte('check_in', today)  // Booking starts on or before today
-        .gt('check_out', today); // Booking ends after today
+        .gte('check_out', today); // Booking ends on or after today (check-out is the day guest leaves)
 
       if (error) {
         throw error;
       }
 
-      // Property is generally available if it has no current bookings (bookings that overlap with today)
-      const hasCurrentBookings = bookings && bookings.length > 0;
+      // Property is generally available if it has no bookings from today onwards
+      const hasUpcomingBookings = bookings && bookings.length > 0;
       
       return {
-        isGenerallyAvailable: !hasCurrentBookings,
+        isGenerallyAvailable: !hasUpcomingBookings,
         upcomingBookings: bookings || [],
       };
     },

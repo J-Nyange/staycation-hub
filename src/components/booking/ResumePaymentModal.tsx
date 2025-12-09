@@ -168,11 +168,19 @@ export function ResumePaymentModal({ open, onOpenChange, booking }: ResumePaymen
           <div className="grid grid-cols-3 gap-2 text-sm pt-2 border-t">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs">{format(new Date(booking.check_in), 'MMM dd')}</span>
+              <span className="text-xs">{(() => {
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const [year, month, day] = booking.check_in.split('-').map(Number);
+                return `${monthNames[month - 1]} ${day}`;
+              })()}</span>
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs">{format(new Date(booking.check_out), 'MMM dd')}</span>
+              <span className="text-xs">{(() => {
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const [year, month, day] = booking.check_out.split('-').map(Number);
+                return `${monthNames[month - 1]} ${day}`;
+              })()}</span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-3 w-3 text-muted-foreground" />

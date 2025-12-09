@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@clerk/clerk-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +11,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBookingActions } from "@/hooks/useBookingActions";
-import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle, Phone } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useBookingNotificationDetails } from "@/hooks/useBookingNotificationDetails";
+import BookingNotificationModal from "@/components/notifications/BookingNotificationModal";
+import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle, Phone, Bell } from "lucide-react";
 import { format } from "date-fns";
 
 export default function OwnerBookings() {
+  const { user } = useUser();
   const [selectedMod, setSelectedMod] = useState<any>(null);
   const [response, setResponse] = useState("");
+  const [selectedNotificationBookingId, setSelectedNotificationBookingId] = useState<string | null>(null);
   const { respondToModification, cancelBooking } = useBookingActions();
+  const { notifications } = useNotifications();
+  const { data: notificationBookingDetails, isLoading: isLoadingBookingDetails } = useBookingNotificationDetails(
+    selectedNotificationBookingId
+  );
+
+  // Filter booking notifications
+  const bookingNotifications = notifications?.filter((n) => n.type === "booking") || [];
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["owner-bookings"],
@@ -106,6 +119,44 @@ export default function OwnerBookings() {
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Booking Management</h1>
 
+        {/* Booking Notifications Section */}
+        {bookingNotifications.length > 0 && (
+          <Card className="mb-6 border-blue-500/20 bg-blue-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-blue-500" />
+                New Booking Notifications ({bookingNotifications.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {bookingNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between p-3 bg-background border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-sm text-muted-foreground">{notification.message}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSelectedNotificationBookingId(
+                          notification.metadata?.booking_id || null
+                        )
+                      }
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="all" className="space-y-6">
           <TabsList>
             <TabsTrigger value="all">All Bookings</TabsTrigger>
@@ -137,11 +188,29 @@ export default function OwnerBookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="line-through text-muted-foreground">
-                            {format(new Date(mod.old_check_in), "MMM dd")} - {format(new Date(mod.old_check_out), "MMM dd")}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = mod.old_check_in.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}`;
+                            })()}{" "}-{" "}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = mod.old_check_out.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}`;
+                            })()}
                           </span>
                           <span className="mx-2">→</span>
                           <span className="text-primary font-medium">
-                            {format(new Date(mod.new_check_in), "MMM dd")} - {format(new Date(mod.new_check_out), "MMM dd")}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = mod.new_check_in.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}`;
+                            })()}{" "}-{" "}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = mod.new_check_out.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}`;
+                            })()}
                           </span>
                         </div>
                         {mod.reason && (
@@ -208,7 +277,16 @@ export default function OwnerBookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span>
-                            {format(new Date(booking.check_in), "MMM dd, yyyy")} - {format(new Date(booking.check_out), "MMM dd, yyyy")}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = booking.check_in.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}, ${year}`;
+                            })()}{" "}-{" "}
+                            {(() => {
+                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              const [year, month, day] = booking.check_out.split('-').map(Number);
+                              return `${monthNames[month - 1]} ${day}, ${year}`;
+                            })()}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -277,6 +355,15 @@ export default function OwnerBookings() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BookingNotificationModal
+        open={!!selectedNotificationBookingId}
+        onOpenChange={(open) => {
+          if (!open) setSelectedNotificationBookingId(null);
+        }}
+        bookingData={notificationBookingDetails || undefined}
+        isLoading={isLoadingBookingDetails}
+      />
 
       <Footer />
     </div>

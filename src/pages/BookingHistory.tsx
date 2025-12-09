@@ -5,11 +5,11 @@ import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, DollarSign, ArrowLeft, XCircle, Edit, Clock, AlertCircle, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, ArrowLeft, XCircle, Edit, Clock, AlertCircle, Trash2, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CancellationModal } from "@/components/booking/CancellationModal";
@@ -17,6 +17,9 @@ import { ModificationModal } from "@/components/booking/ModificationModal";
 import { ResumePaymentModal } from "@/components/booking/ResumePaymentModal";
 import { CreditCard, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useBookingNotificationDetails } from "@/hooks/useBookingNotificationDetails";
+import BookingNotificationModal from "@/components/notifications/BookingNotificationModal";
 
 interface Booking {
   id: string;
@@ -51,6 +54,15 @@ const BookingHistory = () => {
   const [modifyingBooking, setModifyingBooking] = useState<Booking | null>(null);
   const [resumingPaymentBooking, setResumingPaymentBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedNotificationBookingId, setSelectedNotificationBookingId] = useState<string | null>(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const { notifications } = useNotifications();
+  const { data: notificationBookingDetails, isLoading: isLoadingBookingDetails } = useBookingNotificationDetails(
+    selectedNotificationBookingId
+  );
+
+  // Filter booking notifications
+  const bookingNotifications = notifications?.filter((n) => n.type === "booking") || [];
 
   // Mutation to cancel pending bookings
   const cancelPendingBookingMutation = useMutation({
@@ -188,13 +200,13 @@ const BookingHistory = () => {
     }
   };
 
-  // Filter bookings based on active tab
-  const filteredBookings = bookings?.filter((booking) => {
+  // Filter bookings based on active tab (use activeBookings to exclude archived entries)
+  const filteredBookings = activeBookings.filter((booking) => {
     switch (activeTab) {
       case 'pending':
         return booking.status === 'pending' && booking.payment_status === 'pending';
       case 'paid':
-        return booking.payment_status === 'completed';
+        return booking.payment_status === 'paid' || booking.payment_status === 'completed';
       case 'expired':
         return booking.status === 'expired' || (booking.status === 'cancelled' && booking.cancellation_reason?.includes('auto'));
       default:
@@ -202,9 +214,9 @@ const BookingHistory = () => {
     }
   });
 
-  // Filter bookings for clearing (completed or cancelled/expired)
+  // Filter bookings for clearing (paid/completed or cancelled/expired)
   const clearableBookings = activeBookings.filter(b => 
-    b.payment_status === 'completed' || 
+    b.payment_status === 'paid' || b.payment_status === 'completed' || 
     b.status === 'cancelled' || 
     b.status === 'expired'
   );
@@ -214,23 +226,62 @@ const BookingHistory = () => {
     archiveHistoryMutation.mutate(clearableBookings.map(b => b.id));
   };
 
+  // Mutation to archive (clear) all history
+  const archiveAllMutation = useMutation({
+    mutationFn: async (bookingIds: string[]) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ is_archived: true })
+        .in('id', bookingIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "All History Cleared",
+        description: "All your bookings have been removed from the history.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['bookings', user?.id] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to clear history",
+        description: error.message,
+      });
+    },
+  });
+
+  const handleClearAllHistory = () => {
+    if (activeBookings.length === 0) return;
+    archiveAllMutation.mutate(activeBookings.map(b => b.id));
+  };
+
   const getTabCount = (tab: string) => {
-    if (!bookings) return 0;
+    if (!activeBookings) return 0;
     switch (tab) {
       case 'pending':
-        return bookings.filter(b => b.status === 'pending' && b.payment_status === 'pending').length;
+        return activeBookings.filter(b => b.status === 'pending' && b.payment_status === 'pending').length;
       case 'paid':
-        return bookings.filter(b => b.payment_status === 'completed').length;
+        return activeBookings.filter(b => b.payment_status === 'paid' || b.payment_status === 'completed').length;
       case 'expired':
-        return bookings.filter(b => b.status === 'expired' || (b.status === 'cancelled' && b.cancellation_reason?.includes('auto'))).length;
+        return activeBookings.filter(b => b.status === 'expired' || (b.status === 'cancelled' && b.cancellation_reason?.includes('auto'))).length;
       default:
         return filteredBookings?.length || 0;
     }
   };
 
-  // Helper to fix date timezone offset (dates act as local YYYY-MM-DD)
+  // Helper to display date-only strings (yyyy-MM-dd) without timezone shifts
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString + 'T00:00:00'), 'MMM dd, yyyy');
+    // Parse YYYY-MM-DD format directly without creating Date object to avoid timezone issues
+    if (!dateString || typeof dateString !== 'string') return 'Invalid date';
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    if (!year || !month || !day || month < 1 || month > 12) return 'Invalid date';
+    
+    return `${monthNames[month - 1]} ${String(day).padStart(2, '0')}, ${year}`;
   };
 
   return (
@@ -255,18 +306,70 @@ const BookingHistory = () => {
                 View and manage your property bookings
               </p>
             </div>
-            {clearableBookings.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={handleClearHistory}
-                disabled={archiveHistoryMutation.isPending}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Clear History
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {clearableBookings.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleClearHistory}
+                  disabled={archiveHistoryMutation.isPending}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear History
+                </Button>
+              )}
+
+              {activeBookings.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={handleClearAllHistory}
+                  disabled={archiveAllMutation.isPending}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear All
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Booking Notifications Section */}
+          {bookingNotifications.length > 0 && (
+            <Card className="mb-6 border-blue-500/20 bg-blue-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-blue-500" />
+                  Booking Notifications ({bookingNotifications.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {bookingNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="flex items-center justify-between p-3 bg-background border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-sm text-muted-foreground">{notification.message}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedNotificationBookingId(
+                            notification.metadata?.booking_id || null
+                          );
+                          setShowNotificationModal(true);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
@@ -429,7 +532,10 @@ const BookingHistory = () => {
                               </div>
                             )}
 
-                            {booking.status === "confirmed" && new Date(booking.check_in) > new Date() && (
+                            {booking.status === "confirmed" && (() => {
+                              const [year, month, day] = booking.check_in.split('-').map(Number);
+                              return new Date(year, month - 1, day) > new Date();
+                            })() && (
                               <div className="flex gap-2 mt-4">
                                 <Button 
                                   size="sm" 
@@ -513,6 +619,13 @@ const BookingHistory = () => {
           booking={resumingPaymentBooking}
         />
       )}
+
+      <BookingNotificationModal
+        open={showNotificationModal}
+        onOpenChange={setShowNotificationModal}
+        bookingData={notificationBookingDetails || undefined}
+        isLoading={isLoadingBookingDetails}
+      />
 
       <Footer />
     </>

@@ -1,0 +1,272 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  Calendar, 
+  MapPin, 
+  Users, 
+  DollarSign, 
+  Mail, 
+  Phone, 
+  FileText,
+  X 
+} from "lucide-react";
+import { format } from "date-fns";
+
+interface BookingData {
+  id: string;
+  property_title: string;
+  property_location: string;
+  property_image: string;
+  check_in: string;
+  check_out: string;
+  guests: number;
+  total_price: number;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string;
+  special_requests?: string;
+  accommodation_explanation?: string;
+  status: string;
+  payment_status: string;
+}
+
+interface BookingNotificationModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  bookingData?: BookingData;
+  isLoading?: boolean;
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString || typeof dateString !== 'string') return 'Invalid date';
+  
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [year, month, day] = dateString.split('-').map(Number);
+  
+  if (!year || !month || !day || month < 1 || month > 12) return 'Invalid date';
+  
+  return `${monthNames[month - 1]} ${String(day).padStart(2, '0')}, ${year}`;
+};
+
+// Helper to parse accommodation explanation and special requests from combined field
+const parseRequestsField = (requestsField: string | undefined | null) => {
+  if (!requestsField) return { accommodation: null, special: null };
+  
+  const accommodationMatch = requestsField.match(/^\[ACCOMMODATION REQUIREMENT\]\n([\s\S]*?)(?:\n\n(.+))?$/);
+  
+  if (accommodationMatch) {
+    return {
+      accommodation: accommodationMatch[1],
+      special: accommodationMatch[2] || null
+    };
+  }
+  
+  return { accommodation: null, special: requestsField };
+};
+
+export default function BookingNotificationModal({
+  open,
+  onOpenChange,
+  bookingData,
+  isLoading = false,
+}: BookingNotificationModalProps) {
+  if (!bookingData) {
+    return null;
+  }
+
+  const nights =
+    new Date(bookingData.check_out).getTime() -
+    new Date(bookingData.check_in).getTime();
+  const daysCount = Math.ceil(nights / (1000 * 60 * 60 * 24));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Booking Details</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-4"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Property Information */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex gap-4">
+                  {bookingData.property_image && (
+                    <img
+                      src={bookingData.property_image}
+                      alt={bookingData.property_title}
+                      className="w-32 h-32 object-cover rounded-lg"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2">
+                      {bookingData.property_title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mb-3">
+                      <MapPin className="h-4 w-4" />
+                      {bookingData.property_location}
+                    </p>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">{bookingData.status}</Badge>
+                      <Badge
+                        className={
+                          bookingData.payment_status === "paid" ||
+                          bookingData.payment_status === "completed"
+                            ? "bg-green-500/10 text-green-500 border-green-500/20"
+                            : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                        }
+                      >
+                        Payment: {bookingData.payment_status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Guest Information */}
+            <Card>
+              <CardContent className="pt-6">
+                <h4 className="font-semibold mb-4">Guest Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium">{bookingData.guest_name}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        Email
+                      </p>
+                      <p className="font-medium text-sm break-all">
+                        {bookingData.guest_email}
+                      </p>
+                    </div>
+                    {bookingData.guest_phone && (
+                      <div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="h-4 w-4" />
+                          Phone
+                        </p>
+                        <p className="font-medium text-sm">{bookingData.guest_phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Booking Information */}
+            <Card>
+              <CardContent className="pt-6">
+                <h4 className="font-semibold mb-4">Booking Information</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Check-in</p>
+                    <p className="font-medium">{formatDate(bookingData.check_in)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Check-out</p>
+                    <p className="font-medium">{formatDate(bookingData.check_out)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Number of Nights</p>
+                    <p className="font-medium">{daysCount} night{daysCount !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Guests</p>
+                    <p className="font-medium">{bookingData.guests} guest{bookingData.guests !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Information */}
+            <Card>
+              <CardContent className="pt-6">
+                <h4 className="font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Payment Information
+                </h4>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <div className="flex justify-between mb-2">
+                    <span>Total Price</span>
+                    <span className="font-semibold">KES {bookingData.total_price.toLocaleString()}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Status: {bookingData.payment_status}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Special Requests and Accommodation Explanation */}
+            {bookingData.special_requests && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Additional Information
+                  </h4>
+                  {(() => {
+                    const { accommodation, special } = parseRequestsField(bookingData.special_requests);
+                    return (
+                      <div className="space-y-4">
+                        {accommodation && (
+                          <div>
+                            <p className="text-sm font-medium mb-2 text-orange-600">
+                              Accommodation Explanation
+                            </p>
+                            <p className="text-sm text-muted-foreground bg-orange-500/10 p-3 rounded border border-orange-500/20">
+                              {accommodation}
+                            </p>
+                          </div>
+                        )}
+                        {special && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Special Requests</p>
+                            <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
+                              {special}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+              <Button className="flex-1">Message Guest</Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

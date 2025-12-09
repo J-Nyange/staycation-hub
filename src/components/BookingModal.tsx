@@ -49,6 +49,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   });
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [specialRequests, setSpecialRequests] = useState("");
+  const [accommodationExplanation, setAccommodationExplanation] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   // Payment State
@@ -119,7 +120,10 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           check_out: checkOut.toISOString().split('T')[0],
           guests: totalGuests,
           total_price: totalPrice,
-          special_requests: specialRequests || null,
+          special_requests: [
+            accommodationExplanation ? `[ACCOMMODATION REQUIREMENT]\n${accommodationExplanation}` : null,
+            specialRequests
+          ].filter(Boolean).join('\n\n') || null,
           status: 'pending',
           payment_status: 'pending',
           expires_at: expirationTime.toISOString(),
@@ -185,6 +189,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setCheckOut(undefined);
     setGuests({ adults: 2, children: 0, infants: 0 });
     setSpecialRequests('');
+    setAccommodationExplanation('');
     setCurrentTab('details');
     setBookingId('');
     setClientSecret('');
@@ -403,7 +408,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                         <Alert variant="destructive">
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription>
-                            This property accommodates up to {property.guests} guests.
+                            This property accommodates up to {property.guests} guests. Please provide an explanation for the additional guests.
                           </AlertDescription>
                         </Alert>
                       )}
@@ -411,6 +416,23 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                   </PopoverContent>
                 </Popover>
               </div>
+
+              {/* Accommodation Explanation - Only show if guests exceed capacity */}
+              {totalGuests > property.guests && (
+                <div className="space-y-2">
+                  <Label htmlFor="accommodation-explanation" className="text-base font-semibold text-destructive">
+                    Accommodation Explanation (Required)
+                  </Label>
+                  <Textarea
+                    id="accommodation-explanation"
+                    placeholder="Please explain how the additional guests will be accommodated. This helps the property owner understand your requirements..."
+                    value={accommodationExplanation}
+                    onChange={(e) => setAccommodationExplanation(e.target.value)}
+                    className="min-h-[80px] border-destructive/20"
+                  />
+                  <p className="text-xs text-muted-foreground">This property can accommodate {property.guests} guests, but you have selected {totalGuests} guests.</p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="special-requests" className="text-base font-semibold">Special Requests (Optional)</Label>
@@ -492,7 +514,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               <Button
                 type="submit"
                 className="w-full h-12 text-lg"
-                disabled={!checkIn || !checkOut || totalGuests > property.guests || !acceptedTerms || isLoading}
+                disabled={!checkIn || !checkOut || (totalGuests > property.guests && !accommodationExplanation) || !acceptedTerms || isLoading}
               >
                 {isLoading ? (
                   <>

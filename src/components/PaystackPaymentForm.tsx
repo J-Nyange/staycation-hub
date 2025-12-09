@@ -90,14 +90,58 @@ export default function PaystackPaymentForm({
     }
     
     try {
+      // Hide the dialog backdrop and reduce modal z-index to allow Paystack popup to appear on top
+      const dialogRoot = document.querySelector('[role="dialog"]');
+      if (dialogRoot) {
+        // Find the parent container that has the backdrop
+        let parent = dialogRoot.parentElement;
+        while (parent) {
+          // Target the dialog container (typically with high z-index)
+          if (parent.style.zIndex || window.getComputedStyle(parent).zIndex !== 'auto') {
+            parent.style.zIndex = '10'; // Set very low z-index for backdrop
+            parent.setAttribute('data-backup-zindex', window.getComputedStyle(parent).zIndex);
+            break;
+          }
+          parent = parent.parentElement;
+        }
+      }
+
+      // Also hide/reduce the dialog itself
+      if (dialogRoot) {
+        dialogRoot.style.zIndex = '10';
+      }
+
       // The initializePayment function opens a Paystack popup
-      // If this fails silently, the popup may be blocked by the browser
+      // Paystack iframe/popup will render at much higher z-index
       initializePayment({ 
         onSuccess: onPaystackSuccess, 
         onClose: onPaystackClose 
       });
+
+      // Restore z-index after Paystack popup closes (when user completes/cancels payment)
+      const restoreZIndex = () => {
+        const dialogRoot = document.querySelector('[role="dialog"]');
+        if (dialogRoot) {
+          dialogRoot.style.zIndex = '';
+        }
+        
+        let parent = dialogRoot?.parentElement;
+        while (parent) {
+          parent.style.zIndex = '';
+          parent = parent.parentElement;
+        }
+      };
+
+      // Also restore on timeout as fallback
+      setTimeout(restoreZIndex, 8000);
     } catch (error: any) {
       console.error('Paystack initialization error:', error);
+      // Restore z-index on error
+      const dialogRoot = document.querySelector('[role="dialog"]');
+      if (dialogRoot) {
+        dialogRoot.style.zIndex = '';
+      }
+      
       toast({
         variant: "destructive",
         title: "Payment Error",
