@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, DollarSign, ArrowLeft, XCircle, Edit, Clock, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, ArrowLeft, XCircle, Edit, Clock, AlertCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CancellationModal } from "@/components/booking/CancellationModal";
@@ -39,6 +39,7 @@ interface Booking {
     category: string;
     cancellation_policy: string;
   };
+  is_archived?: boolean;
 }
 
 const BookingHistory = () => {
@@ -82,6 +83,32 @@ const BookingHistory = () => {
     },
   });
 
+  // Mutation to archive (clear) history
+  const archiveHistoryMutation = useMutation({
+    mutationFn: async (bookingIds: string[]) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ is_archived: true })
+        .in('id', bookingIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "History Cleared",
+        description: "Selected bookings have been removed from your history.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['bookings', user?.id] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to clear history",
+        description: error.message,
+      });
+    },
+  });
+
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings', user?.id],
     queryFn: async () => {
@@ -108,6 +135,9 @@ const BookingHistory = () => {
     },
     enabled: !!user,
   });
+
+  // Filter out archived bookings
+  const activeBookings = bookings?.filter(b => !b.is_archived) || [];
 
   if (!user) {
     return (
@@ -172,6 +202,18 @@ const BookingHistory = () => {
     }
   });
 
+  // Filter bookings for clearing (completed or cancelled/expired)
+  const clearableBookings = activeBookings.filter(b => 
+    b.payment_status === 'completed' || 
+    b.status === 'cancelled' || 
+    b.status === 'expired'
+  );
+
+  const handleClearHistory = () => {
+    if (clearableBookings.length === 0) return;
+    archiveHistoryMutation.mutate(clearableBookings.map(b => b.id));
+  };
+
   const getTabCount = (tab: string) => {
     if (!bookings) return 0;
     switch (tab) {
@@ -182,8 +224,13 @@ const BookingHistory = () => {
       case 'expired':
         return bookings.filter(b => b.status === 'expired' || (b.status === 'cancelled' && b.cancellation_reason?.includes('auto'))).length;
       default:
-        return bookings.length;
+        return filteredBookings?.length || 0;
     }
+  };
+
+  // Helper to fix date timezone offset (dates act as local YYYY-MM-DD)
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString + 'T00:00:00'), 'MMM dd, yyyy');
   };
 
   return (
@@ -200,11 +247,25 @@ const BookingHistory = () => {
             Back to Profile
           </Button>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Booking History</h1>
-            <p className="text-muted-foreground">
-              View and manage your property bookings
-            </p>
+
+          <div className="mb-8 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Booking History</h1>
+              <p className="text-muted-foreground">
+                View and manage your property bookings
+              </p>
+            </div>
+            {clearableBookings.length > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={handleClearHistory}
+                disabled={archiveHistoryMutation.isPending}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Clear History
+              </Button>
+            )}
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -287,7 +348,7 @@ const BookingHistory = () => {
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <div>
                                   <p className="text-muted-foreground text-xs">Check-in</p>
-                                  <p className="font-medium">{format(new Date(booking.check_in), 'MMM dd, yyyy')}</p>
+                                  <p className="font-medium">{formatDate(booking.check_in)}</p>
                                 </div>
                               </div>
 
@@ -295,7 +356,7 @@ const BookingHistory = () => {
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <div>
                                   <p className="text-muted-foreground text-xs">Check-out</p>
-                                  <p className="font-medium">{format(new Date(booking.check_out), 'MMM dd, yyyy')}</p>
+                                  <p className="font-medium">{formatDate(booking.check_out)}</p>
                                 </div>
                               </div>
 

@@ -23,7 +23,10 @@ export default function PaystackPaymentForm({
 
   // Convert to kobo (Paystack uses minor currency units)
   const amountInKobo = Math.round(totalPrice * 100);
-  const reference = `booking_${bookingId}_${Date.now()}`;
+  
+  // Use useState to ensure reference is only generated once when component mounts
+  // This prevents the Paystack popup from freezing/reloading on re-renders
+  const [reference] = useState(() => `booking_${bookingId}_${Date.now()}`);
 
   const config = {
     reference,

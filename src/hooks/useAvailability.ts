@@ -36,18 +36,21 @@ export const usePropertyAvailability = (propertyId: string) => {
   return useQuery({
     queryKey: ['property-availability', propertyId],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
       const { data: bookings, error } = await supabase
         .from('bookings')
         .select('check_in, check_out, status')
         .eq('property_id', propertyId)
         .in('status', ['confirmed', 'pending'])
-        .gte('check_out', new Date().toISOString().split('T')[0]);
+        .lte('check_in', today)  // Booking starts on or before today
+        .gt('check_out', today); // Booking ends after today
 
       if (error) {
         throw error;
       }
 
-      // Property is generally available if it has no current bookings
+      // Property is generally available if it has no current bookings (bookings that overlap with today)
       const hasCurrentBookings = bookings && bookings.length > 0;
       
       return {
