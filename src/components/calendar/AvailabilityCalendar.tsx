@@ -3,7 +3,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useCalendarBookings } from "@/hooks/useCalendarBookings";
 import { useBlockedDates } from "@/hooks/useBlockedDates";
 import { BookingLegend } from "./BookingLegend";
-import { isWithinInterval, parseISO, format } from "date-fns";
+import { isBefore, format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface AvailabilityCalendarProps {
@@ -28,9 +28,15 @@ export const AvailabilityCalendar = ({
   const isDateBooked = (date: Date) => {
     return bookings.some((booking) => {
       if (booking.status === "cancelled") return false;
-      const checkIn = parseISO(booking.check_in);
-      const checkOut = parseISO(booking.check_out);
-      return isWithinInterval(date, { start: checkIn, end: checkOut });
+      // Parse date-only strings (yyyy-MM-dd) using UTC to avoid timezone shifts
+      const [checkInYear, checkInMonth, checkInDay] = booking.check_in.split('-').map(Number);
+      const [checkOutYear, checkOutMonth, checkOutDay] = booking.check_out.split('-').map(Number);
+      const checkIn = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
+      const checkOut = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
+      // Convert calendar date to UTC for comparison
+      const calendarDateUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      // Booked if date is on or after check-in AND before check-out (check-out is guest departure)
+      return !isBefore(calendarDateUTC, checkIn) && isBefore(calendarDateUTC, checkOut);
     });
   };
 
@@ -42,9 +48,15 @@ export const AvailabilityCalendar = ({
   const isDatePending = (date: Date) => {
     return bookings.some((booking) => {
       if (booking.status !== "pending") return false;
-      const checkIn = parseISO(booking.check_in);
-      const checkOut = parseISO(booking.check_out);
-      return isWithinInterval(date, { start: checkIn, end: checkOut });
+      // Parse date-only strings (yyyy-MM-dd) using UTC to avoid timezone shifts
+      const [checkInYear, checkInMonth, checkInDay] = booking.check_in.split('-').map(Number);
+      const [checkOutYear, checkOutMonth, checkOutDay] = booking.check_out.split('-').map(Number);
+      const checkIn = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
+      const checkOut = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
+      // Convert calendar date to UTC for comparison
+      const calendarDateUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      // Pending if date is on or after check-in AND before check-out
+      return !isBefore(calendarDateUTC, checkIn) && isBefore(calendarDateUTC, checkOut);
     });
   };
 

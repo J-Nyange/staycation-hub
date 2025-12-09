@@ -17,12 +17,13 @@ export const useCalendarBookings = (propertyId: string, currentMonth: Date) => {
       const start = startOfMonth(currentMonth);
       const end = endOfMonth(currentMonth);
 
+      // Fetch bookings where check_out is after month start AND check_in is before month end
       const { data, error } = await supabase
         .from("bookings")
         .select("id, check_in, check_out, status, user_id")
         .eq("property_id", propertyId)
-        .gte("check_in", format(start, "yyyy-MM-dd"))
-        .lte("check_out", format(end, "yyyy-MM-dd"));
+        .gte("check_out", format(start, "yyyy-MM-dd"))  // Booking ends on or after month start
+        .lte("check_in", format(end, "yyyy-MM-dd"));    // Booking starts on or before month end
 
       if (error) throw error;
       return data as CalendarBooking[];

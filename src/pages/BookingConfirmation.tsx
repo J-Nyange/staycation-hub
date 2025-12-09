@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Download, Home } from 'lucide-react';
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 export default function BookingConfirmation() {
   const [searchParams] = useSearchParams();
@@ -67,19 +68,27 @@ export default function BookingConfirmation() {
     return null;
   }
 
-  const checkInDate = new Date(booking.check_in).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const checkInDate = (() => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const [year, month, day] = booking.check_in.split('-').map(Number);
+    // Create a UTC date to avoid timezone shifts, then format as desired
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const dayName = days[date.getUTCDay()];
+    const monthName = monthNames[month - 1];
+    return `${dayName}, ${monthName} ${day}, ${year}`;
+  })();
 
-  const checkOutDate = new Date(booking.check_out).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const checkOutDate = (() => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const [year, month, day] = booking.check_out.split('-').map(Number);
+    // Create a UTC date to avoid timezone shifts, then format as desired
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const dayName = days[date.getUTCDay()];
+    const monthName = monthNames[month - 1];
+    return `${dayName}, ${monthName} ${day}, ${year}`;
+  })();
 
   return (
     <div className="min-h-screen bg-background">
