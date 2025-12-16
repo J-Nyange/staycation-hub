@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,8 +37,10 @@ interface BookingModalProps {
 export default function BookingModal({ property, open, onOpenChange }: BookingModalProps) {
   const { user } = useUser();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState<'details' | 'payment'>('details');
+  const [hideContent, setHideContent] = useState(false);
   
   // Form State
   const [checkIn, setCheckIn] = useState<Date>();
@@ -111,13 +114,17 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
       const expirationTime = addMinutes(new Date(), BOOKING_TIMEOUT_MINUTES);
 
       // Create booking record with expires_at
+      // Use format from date-fns to ensure local date string (avoid UTC shift from toISOString)
+      const formattedCheckIn = format(checkIn, 'yyyy-MM-dd');
+      const formattedCheckOut = format(checkOut, 'yyyy-MM-dd');
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           user_id: user.id,
           property_id: property.id,
-          check_in: checkIn.toISOString().split('T')[0],
-          check_out: checkOut.toISOString().split('T')[0],
+          check_in: formattedCheckIn,
+          check_out: formattedCheckOut,
           guests: totalGuests,
           total_price: totalPrice,
           special_requests: [
@@ -127,6 +134,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           status: 'pending',
           payment_status: 'pending',
           expires_at: expirationTime.toISOString(),
+          guest_email: user.primaryEmailAddress?.emailAddress,
+          guest_phone: user.primaryPhoneNumber?.phoneNumber,
         })
         .select()
         .single();
@@ -144,8 +153,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           {
             body: {
               property_id: property.id,
-              check_in: checkIn.toISOString().split('T')[0],
-              check_out: checkOut.toISOString().split('T')[0],
+              check_in: formattedCheckIn,
+              check_out: formattedCheckOut,
               guests: totalGuests,
               total_price: totalPrice,
               special_requests: specialRequests || null,
@@ -164,6 +173,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
         title: "Booking Details Saved",
         description: `Please complete payment within ${BOOKING_TIMEOUT_MINUTES} minutes to confirm your booking.`,
       });
+      
+      // Invalidate availability immediately so calendar updates (even if pending)
+      queryClient.invalidateQueries({ queryKey: ['property-availability', property.id] });
+      queryClient.invalidateQueries({ queryKey: ['availability', property.id] });
+      
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -180,6 +194,9 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
       title: "Payment Successful! 🎉",
       description: "Your booking is confirmed. Check your email for details.",
     });
+    // Final invalidation to ensure everything is synced
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['property-availability', property.id] });
     onOpenChange(false);
     resetForm();
   };
@@ -197,6 +214,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setPaymentMethod('stripe');
     setExpiresAt(null);
     setTimeRemaining(BOOKING_TIMEOUT_MINUTES * 60);
+    setHideContent(false);
   };
 
   useEffect(() => {
@@ -207,7 +225,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn("sm:max-w-4xl max-h-[90vh] overflow-y-auto duration-200", hideContent && "opacity-0 pointer-events-none")}>
         <DialogHeader>
           <DialogTitle className="text-2xl">Book {property.title}</DialogTitle>
         </DialogHeader>
@@ -578,6 +596,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 totalPrice={totalPrice}
                 email={user.primaryEmailAddress.emailAddress}
                 onSuccess={handlePaymentSuccess}
+                onStart={() => setHideContent(true)}
+                onEnd={() => setHideContent(false)}
               />
             )}
           </TabsContent>

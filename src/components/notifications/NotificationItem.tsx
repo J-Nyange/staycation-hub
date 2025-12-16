@@ -10,6 +10,7 @@ import {
   Info,
   Home,
 } from "lucide-react";
+import { useBookingModal } from "@/contexts/BookingModalContext";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -32,12 +33,39 @@ const getNotificationIcon = (type: Notification["type"]) => {
   }
 };
 
+const getBookingIdFromUrl = (url?: string) => {
+  if (!url) return null;
+  // Assumes URL format like /owner-dashboard/bookings/UUID or /bookings/UUID
+  const match = url.match(/\/bookings\/([a-zA-Z0-9-]+)/);
+  return match ? match[1] : null;
+};
+
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const { markAsRead } = useNotifications();
+  const { openBookingModal } = useBookingModal();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent default if it's a link (though we are removing the Link wrapper for bookings)
+    // But we still want to stop propagation if needed
+    
     if (!notification.is_read) {
       markAsRead(notification.id);
+    }
+
+    if (notification.type === 'booking') {
+      e.preventDefault(); // maintain this just in case
+      
+      // Try to get ID from metadata first (reliable)
+      let bookingId = notification.metadata?.booking_id;
+      
+      // Fallback to URL parsing if metadata missing
+      if (!bookingId && notification.action_url) {
+         bookingId = getBookingIdFromUrl(notification.action_url);
+      }
+
+      if (bookingId) {
+        openBookingModal(bookingId);
+      }
     }
   };
 
@@ -73,9 +101,11 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
     </div>
   );
 
-  if (notification.action_url) {
-    return <Link to={notification.action_url}>{content}</Link>;
+  // If it's NOT a booking, we might still want to use the link if present
+  if (notification.action_url && notification.type !== 'booking') {
+    return <Link to={notification.action_url} onClick={handleClick}>{content}</Link>;
   }
 
+  // For bookings (or no URL), just return the content which has the onClick
   return content;
 };

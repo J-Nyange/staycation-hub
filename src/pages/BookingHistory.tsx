@@ -273,15 +273,17 @@ const BookingHistory = () => {
 
   // Helper to display date-only strings (yyyy-MM-dd) without timezone shifts
   const formatDate = (dateString: string) => {
-    // Parse YYYY-MM-DD format directly without creating Date object to avoid timezone issues
-    if (!dateString || typeof dateString !== 'string') return 'Invalid date';
+    if (!dateString) return 'Invalid date';
+    // Ensure we are working with just the date part if a timestamp is passed
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
     
+    if (!year || !month || !day) return 'Invalid date';
+    
+    // Create date object at noon to avoid timezone rolling to previous day
+    // Or simpler: just use the string parts directly
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const [year, month, day] = dateString.split('-').map(Number);
-    
-    if (!year || !month || !day || month < 1 || month > 12) return 'Invalid date';
-    
-    return `${monthNames[month - 1]} ${String(day).padStart(2, '0')}, ${year}`;
+    return `${monthNames[month - 1]} ${day}, ${year}`;
   };
 
   return (
