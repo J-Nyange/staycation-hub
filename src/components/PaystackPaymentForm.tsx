@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface PaystackPaymentFormProps {
   onSuccess: () => void;
+  onStart?: () => void;
+  onEnd?: () => void;
   totalPrice: number;
   email: string;
   bookingId: string;
@@ -14,6 +16,8 @@ interface PaystackPaymentFormProps {
 
 export default function PaystackPaymentForm({ 
   onSuccess, 
+  onStart,
+  onEnd,
   totalPrice, 
   email, 
   bookingId 
@@ -38,6 +42,7 @@ export default function PaystackPaymentForm({
 
   const onPaystackSuccess = async (response: { reference: string }) => {
     setIsProcessing(true);
+    if (onEnd) onEnd(); // Restore modal visibility
     try {
       // Verify payment on backend
       const { data, error } = await supabase.functions.invoke('verify-paystack-payment', {
@@ -70,6 +75,7 @@ export default function PaystackPaymentForm({
   };
 
   const onPaystackClose = () => {
+    if (onEnd) onEnd(); // Restore modal visibility
     toast({
       variant: "destructive",
       title: "Payment Cancelled",
@@ -90,57 +96,16 @@ export default function PaystackPaymentForm({
     }
     
     try {
-      // Hide the dialog backdrop and reduce modal z-index to allow Paystack popup to appear on top
-      const dialogRoot = document.querySelector('[role="dialog"]');
-      if (dialogRoot) {
-        // Find the parent container that has the backdrop
-        let parent = dialogRoot.parentElement;
-        while (parent) {
-          // Target the dialog container (typically with high z-index)
-          if (parent.style.zIndex || window.getComputedStyle(parent).zIndex !== 'auto') {
-            parent.style.zIndex = '10'; // Set very low z-index for backdrop
-            parent.setAttribute('data-backup-zindex', window.getComputedStyle(parent).zIndex);
-            break;
-          }
-          parent = parent.parentElement;
-        }
-      }
-
-      // Also hide/reduce the dialog itself
-      if (dialogRoot) {
-        dialogRoot.style.zIndex = '10';
-      }
-
+      if (onStart) onStart(); // Hide modal
+      
       // The initializePayment function opens a Paystack popup
-      // Paystack iframe/popup will render at much higher z-index
       initializePayment({ 
         onSuccess: onPaystackSuccess, 
         onClose: onPaystackClose 
       });
-
-      // Restore z-index after Paystack popup closes (when user completes/cancels payment)
-      const restoreZIndex = () => {
-        const dialogRoot = document.querySelector('[role="dialog"]');
-        if (dialogRoot) {
-          dialogRoot.style.zIndex = '';
-        }
-        
-        let parent = dialogRoot?.parentElement;
-        while (parent) {
-          parent.style.zIndex = '';
-          parent = parent.parentElement;
-        }
-      };
-
-      // Also restore on timeout as fallback
-      setTimeout(restoreZIndex, 8000);
     } catch (error: any) {
       console.error('Paystack initialization error:', error);
-      // Restore z-index on error
-      const dialogRoot = document.querySelector('[role="dialog"]');
-      if (dialogRoot) {
-        dialogRoot.style.zIndex = '';
-      }
+      if (onEnd) onEnd(); // Restore on error
       
       toast({
         variant: "destructive",

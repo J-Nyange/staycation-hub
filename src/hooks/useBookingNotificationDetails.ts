@@ -41,6 +41,8 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
           payment_status,
           special_requests,
           user_id,
+          guest_email,
+          guest_phone,
           properties (
             id,
             title,
@@ -50,7 +52,8 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
           profiles:user_id (
             first_name,
             last_name,
-            phone
+            phone,
+            email
           )
         `)
         .eq("id", bookingId)
@@ -59,11 +62,9 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
       if (error) throw error;
       if (!booking) return null;
 
-      // Get guest email from Clerk user
-      let guestEmail = "No email available";
-      if (user?.id === (booking as any).user_id) {
-        guestEmail = user.primaryEmailAddress?.emailAddress || guestEmail;
-      }
+      // Get guest email from booking snapshot or profile
+      const guestEmail = (booking as any).guest_email || (booking as any).profiles?.email || "No email available";
+      const guestPhone = (booking as any).guest_phone || (booking as any).profiles?.phone || undefined;
 
       const bookingData: BookingNotificationData = {
         id: (booking as any).id,
@@ -76,7 +77,7 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
         total_price: (booking as any).total_price,
         guest_name: `${(booking as any).profiles?.first_name || ""} ${(booking as any).profiles?.last_name || ""}`.trim() || "Guest",
         guest_email: guestEmail,
-        guest_phone: (booking as any).profiles?.phone || undefined,
+        guest_phone: guestPhone,
         special_requests: (booking as any).special_requests || undefined,
         accommodation_explanation: (booking as any).accommodation_explanation || undefined,
         status: (booking as any).status,
