@@ -42,7 +42,6 @@ interface Booking {
     category: string;
     cancellation_policy: string;
   };
-  is_archived?: boolean;
 }
 
 const BookingHistory = () => {
@@ -95,12 +94,14 @@ const BookingHistory = () => {
     },
   });
 
-  // Mutation to archive (clear) history
+  // Mutation to archive (clear) history - using status update instead of is_archived
   const archiveHistoryMutation = useMutation({
     mutationFn: async (bookingIds: string[]) => {
+      // Mark bookings as archived by updating status to a hidden state
+      // Since is_archived doesn't exist in types, we'll delete from UI by filtering
       const { error } = await supabase
         .from('bookings')
-        .update({ is_archived: true })
+        .update({ status: 'archived' })
         .in('id', bookingIds);
 
       if (error) throw error;
@@ -148,8 +149,8 @@ const BookingHistory = () => {
     enabled: !!user,
   });
 
-  // Filter out archived bookings
-  const activeBookings = bookings?.filter(b => !b.is_archived) || [];
+  // Filter out archived bookings (status === 'archived')
+  const activeBookings = bookings?.filter(b => b.status !== 'archived') || [];
 
   if (!user) {
     return (
@@ -231,7 +232,7 @@ const BookingHistory = () => {
     mutationFn: async (bookingIds: string[]) => {
       const { error } = await supabase
         .from('bookings')
-        .update({ is_archived: true })
+        .update({ status: 'archived' })
         .in('id', bookingIds);
 
       if (error) throw error;

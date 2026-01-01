@@ -171,6 +171,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          accommodation_explanation: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -179,8 +180,11 @@ export type Database = {
           commission_amount: number | null
           created_at: string
           expires_at: string | null
+          guest_email: string | null
+          guest_phone: string | null
           guests: number
           id: string
+          is_archived: boolean | null
           modification_count: number | null
           payment_status: string | null
           payout_status: string | null
@@ -196,6 +200,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accommodation_explanation?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -204,8 +209,11 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string
           expires_at?: string | null
+          guest_email?: string | null
+          guest_phone?: string | null
           guests: number
           id?: string
+          is_archived?: boolean | null
           modification_count?: number | null
           payment_status?: string | null
           payout_status?: string | null
@@ -221,6 +229,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accommodation_explanation?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -229,8 +238,11 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string
           expires_at?: string | null
+          guest_email?: string | null
+          guest_phone?: string | null
           guests?: number
           id?: string
+          is_archived?: boolean | null
           modification_count?: number | null
           payment_status?: string | null
           payout_status?: string | null
