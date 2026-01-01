@@ -45,11 +45,7 @@ import { setTokenProvider } from "@/integrations/supabase/client";
 import { BookingModalProvider } from "@/contexts/BookingModalContext";
 
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key");
-}
+const PUBLISHABLE_KEY = "pk_test_cHVtcGVkLXRvdWNhbi00OS5jbGVyay5hY2NvdW50cy5kZXYk";
 
 // --- Supabase token sync component ---
 const SupabaseTokenSync = () => {
