@@ -224,8 +224,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-4xl max-h-[90vh] overflow-y-auto duration-200", hideContent && "opacity-0 pointer-events-none")}>
+    <Dialog open={open && !hideContent} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Book {property.title}</DialogTitle>
         </DialogHeader>
