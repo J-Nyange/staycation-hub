@@ -3,11 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = "https://aermicluavoxxxhkajah.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY");
-}
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0OTIwMTYsImV4cCI6MjA3MzA2ODAxNn0.xMaSEgsJG9XmKoKMsh3u-srh2HJN7304NgtWpH1L0hU";
 
 // Token provider for Clerk integration
 let tokenProvider: () => Promise<string | null> = async () => null;
