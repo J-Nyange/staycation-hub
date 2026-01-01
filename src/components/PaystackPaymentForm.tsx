@@ -36,7 +36,7 @@ export default function PaystackPaymentForm({
     reference,
     email,
     amount: amountInKobo,
-    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || '',
+    publicKey: "pk_test_fb1b2723d272883f87a48317d0314621be890bf4",
     currency: 'KES', // Kenyan Shillings - change to NGN for Nigerian Naira
   };
 
@@ -86,7 +86,7 @@ export default function PaystackPaymentForm({
   const initializePayment = usePaystackPayment(config);
 
   const handlePayment = () => {
-    if (!config.publicKey || config.publicKey === 'pk_test_your_paystack_public_key') {
+    if (!config.publicKey) {
       toast({
         variant: "destructive",
         title: "Configuration Error",
