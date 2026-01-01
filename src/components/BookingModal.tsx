@@ -24,7 +24,7 @@ import PaymentMethodSelector from "@/components/PaymentMethodSelector";
 import { Property } from "@/hooks/useProperties";
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+const stripePromise = loadStripe("pk_test_51N7jPrF6g21qrmupA6EPcdNQT4MJgZ7CZ06DmZBG53E1qPiomYCTFetpwARwbhIWp5AoboY4hAYT0SSx8mR5boPr00QIZnyoOl");
 
 const BOOKING_TIMEOUT_MINUTES = 15;
 
