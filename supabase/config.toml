@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.expire-pending-bookings]
 verify_jwt = false
+
+[functions.pay-balance]
+verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.send-sms]
+verify_jwt = false

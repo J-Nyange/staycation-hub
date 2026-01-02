@@ -171,7 +171,12 @@ export type Database = {
       }
       bookings: {
         Row: {
+          accessibility_needs: string | null
           accommodation_explanation: string | null
+          additional_services: Json | null
+          balance_amount: number | null
+          balance_due_date: string | null
+          balance_paid_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -179,14 +184,22 @@ export type Database = {
           check_out: string
           commission_amount: number | null
           created_at: string
+          deposit_amount: number | null
+          deposit_paid_at: string | null
+          deposit_percentage: number | null
+          dietary_requirements: string | null
           expires_at: string | null
+          group_size: number | null
+          group_type: string | null
           guest_email: string | null
           guest_phone: string | null
           guests: number
           id: string
           is_archived: boolean | null
+          is_group_booking: boolean | null
           modification_count: number | null
           payment_status: string | null
+          payment_type: string | null
           payout_status: string | null
           property_id: string
           refund_amount: number | null
@@ -200,7 +213,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accessibility_needs?: string | null
           accommodation_explanation?: string | null
+          additional_services?: Json | null
+          balance_amount?: number | null
+          balance_due_date?: string | null
+          balance_paid_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -208,14 +226,22 @@ export type Database = {
           check_out: string
           commission_amount?: number | null
           created_at?: string
+          deposit_amount?: number | null
+          deposit_paid_at?: string | null
+          deposit_percentage?: number | null
+          dietary_requirements?: string | null
           expires_at?: string | null
+          group_size?: number | null
+          group_type?: string | null
           guest_email?: string | null
           guest_phone?: string | null
           guests: number
           id?: string
           is_archived?: boolean | null
+          is_group_booking?: boolean | null
           modification_count?: number | null
           payment_status?: string | null
+          payment_type?: string | null
           payout_status?: string | null
           property_id: string
           refund_amount?: number | null
@@ -229,7 +255,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accessibility_needs?: string | null
           accommodation_explanation?: string | null
+          additional_services?: Json | null
+          balance_amount?: number | null
+          balance_due_date?: string | null
+          balance_paid_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -237,14 +268,22 @@ export type Database = {
           check_out?: string
           commission_amount?: number | null
           created_at?: string
+          deposit_amount?: number | null
+          deposit_paid_at?: string | null
+          deposit_percentage?: number | null
+          dietary_requirements?: string | null
           expires_at?: string | null
+          group_size?: number | null
+          group_type?: string | null
           guest_email?: string | null
           guest_phone?: string | null
           guests?: number
           id?: string
           is_archived?: boolean | null
+          is_group_booking?: boolean | null
           modification_count?: number | null
           payment_status?: string | null
+          payment_type?: string | null
           payout_status?: string | null
           property_id?: string
           refund_amount?: number | null
@@ -483,6 +522,8 @@ export type Database = {
           pending_payout: number | null
           phone: string | null
           preferred_language: string | null
+          push_notifications_enabled: boolean | null
+          sms_notifications_enabled: boolean | null
           stripe_connect_account_id: string | null
           stripe_customer_id: string | null
           suspended_reason: string | null
@@ -504,6 +545,8 @@ export type Database = {
           pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
+          push_notifications_enabled?: boolean | null
+          sms_notifications_enabled?: boolean | null
           stripe_connect_account_id?: string | null
           stripe_customer_id?: string | null
           suspended_reason?: string | null
@@ -525,6 +568,8 @@ export type Database = {
           pending_payout?: number | null
           phone?: string | null
           preferred_language?: string | null
+          push_notifications_enabled?: boolean | null
+          sms_notifications_enabled?: boolean | null
           stripe_connect_account_id?: string | null
           stripe_customer_id?: string | null
           suspended_reason?: string | null
@@ -543,7 +588,10 @@ export type Database = {
           category: string
           commission_rate: number | null
           created_at: string
+          deposit_percentage: number | null
           description: string | null
+          group_booking_enabled: boolean | null
+          group_discount_percentage: number | null
           guests: number
           id: string
           images: string[] | null
@@ -554,6 +602,7 @@ export type Database = {
           location: string
           longitude: number | null
           main_image: string | null
+          max_group_size: number | null
           moderation_status: string | null
           owner_id: string | null
           price_per_night: number
@@ -569,7 +618,10 @@ export type Database = {
           category: string
           commission_rate?: number | null
           created_at?: string
+          deposit_percentage?: number | null
           description?: string | null
+          group_booking_enabled?: boolean | null
+          group_discount_percentage?: number | null
           guests?: number
           id?: string
           images?: string[] | null
@@ -580,6 +632,7 @@ export type Database = {
           location: string
           longitude?: number | null
           main_image?: string | null
+          max_group_size?: number | null
           moderation_status?: string | null
           owner_id?: string | null
           price_per_night: number
@@ -595,7 +648,10 @@ export type Database = {
           category?: string
           commission_rate?: number | null
           created_at?: string
+          deposit_percentage?: number | null
           description?: string | null
+          group_booking_enabled?: boolean | null
+          group_discount_percentage?: number | null
           guests?: number
           id?: string
           images?: string[] | null
@@ -606,6 +662,7 @@ export type Database = {
           location?: string
           longitude?: number | null
           main_image?: string | null
+          max_group_size?: number | null
           moderation_status?: string | null
           owner_id?: string | null
           price_per_night?: number
@@ -675,6 +732,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       reviews: {
         Row: {
@@ -778,6 +865,116 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          message_type: string
+          phone_number: string
+          status: string | null
+          twilio_sid: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          message_type: string
+          phone_number: string
+          status?: string | null
+          twilio_sid?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          message_type?: string
+          phone_number?: string
+          status?: string | null
+          twilio_sid?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_conversations: {
+        Row: {
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string | null
+          id: string
+          priority: string | null
+          status: string | null
+          subject: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          sender_id: string
+          sender_type?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
             referencedColumns: ["id"]
           },
         ]
