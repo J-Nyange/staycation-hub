@@ -21,6 +21,8 @@ import { Elements } from "@stripe/react-stripe-js";
 import StripePaymentForm from "@/components/StripePaymentForm";
 import PaystackPaymentForm from "@/components/PaystackPaymentForm";
 import PaymentMethodSelector from "@/components/PaymentMethodSelector";
+import PaymentTypeSelector from "@/components/booking/PaymentTypeSelector";
+import GroupBookingForm from "@/components/booking/GroupBookingForm";
 import { Property } from "@/hooks/useProperties";
 
 // Initialize Stripe
@@ -57,14 +59,36 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paystack'>('stripe');
+  const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
   const [clientSecret, setClientSecret] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(BOOKING_TIMEOUT_MINUTES * 60);
 
+  // Group Booking State
+  const [isGroupBooking, setIsGroupBooking] = useState(false);
+  const [groupType, setGroupType] = useState('');
+  const [dietaryRequirements, setDietaryRequirements] = useState('');
+  const [accessibilityNeeds, setAccessibilityNeeds] = useState('');
+  const [additionalServices, setAdditionalServices] = useState<string[]>([]);
+
   const totalGuests = guests.adults + guests.children + guests.infants;
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const totalPrice = nights * (property.price_per_night || 0);
+
+  // Deposit calculations
+  const depositPercentage = (property as any).deposit_percentage || 30;
+  const depositAmount = Math.round(totalPrice * (depositPercentage / 100));
+  const balanceAmount = totalPrice - depositAmount;
+  const amountToPay = paymentType === 'deposit' ? depositAmount : totalPrice;
+  
+  // Balance due date (7 days before check-in, or today if within 7 days)
+  const balanceDueDate = checkIn ? (() => {
+    const dueDate = new Date(checkIn);
+    dueDate.setDate(dueDate.getDate() - 7);
+    const today = new Date();
+    return dueDate > today ? dueDate : today;
+  })() : null;
 
   // Countdown timer effect
   useEffect(() => {
@@ -136,6 +160,23 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           expires_at: expirationTime.toISOString(),
           guest_email: user.primaryEmailAddress?.emailAddress,
           guest_phone: user.primaryPhoneNumber?.phoneNumber,
+          // Payment type fields
+          payment_type: paymentType,
+          deposit_amount: paymentType === 'deposit' ? depositAmount : null,
+          deposit_percentage: paymentType === 'deposit' ? depositPercentage : null,
+          balance_amount: paymentType === 'deposit' ? balanceAmount : null,
+          balance_due_date: paymentType === 'deposit' && balanceDueDate 
+            ? format(balanceDueDate, 'yyyy-MM-dd') 
+            : null,
+          // Group booking fields
+          is_group_booking: isGroupBooking,
+          group_size: isGroupBooking ? totalGuests : null,
+          group_type: isGroupBooking ? groupType : null,
+          dietary_requirements: isGroupBooking ? dietaryRequirements : null,
+          accessibility_needs: isGroupBooking ? accessibilityNeeds : null,
+          additional_services: isGroupBooking && additionalServices.length > 0 
+            ? additionalServices 
+            : null,
         })
         .select()
         .single();
@@ -156,9 +197,10 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               check_in: formattedCheckIn,
               check_out: formattedCheckOut,
               guests: totalGuests,
-              total_price: totalPrice,
+              total_price: amountToPay,
               special_requests: specialRequests || null,
               booking_id: booking.id,
+              payment_type: paymentType,
             },
           }
         );
@@ -212,9 +254,16 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setClientSecret('');
     setAcceptedTerms(false);
     setPaymentMethod('stripe');
+    setPaymentType('full');
     setExpiresAt(null);
     setTimeRemaining(BOOKING_TIMEOUT_MINUTES * 60);
     setHideContent(false);
+    // Reset group booking
+    setIsGroupBooking(false);
+    setGroupType('');
+    setDietaryRequirements('');
+    setAccessibilityNeeds('');
+    setAdditionalServices([]);
   };
 
   useEffect(() => {
@@ -435,6 +484,21 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 </Popover>
               </div>
 
+              {/* Group Booking Options */}
+              <GroupBookingForm
+                isGroupBooking={isGroupBooking}
+                onGroupBookingChange={setIsGroupBooking}
+                groupType={groupType}
+                onGroupTypeChange={setGroupType}
+                dietaryRequirements={dietaryRequirements}
+                onDietaryChange={setDietaryRequirements}
+                accessibilityNeeds={accessibilityNeeds}
+                onAccessibilityChange={setAccessibilityNeeds}
+                additionalServices={additionalServices}
+                onServicesChange={setAdditionalServices}
+                totalGuests={totalGuests}
+              />
+
               {/* Accommodation Explanation - Only show if guests exceed capacity */}
               {totalGuests > property.guests && (
                 <div className="space-y-2">
@@ -463,18 +527,43 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 />
               </div>
 
+              {/* Payment Type Selection (Full vs Deposit) */}
+              {checkIn && checkOut && nights > 0 && (
+                <PaymentTypeSelector
+                  value={paymentType}
+                  onChange={setPaymentType}
+                  depositPercentage={depositPercentage}
+                  totalPrice={totalPrice}
+                  checkInDate={checkIn}
+                />
+              )}
+
               {/* Payment Method Selection */}
               <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
 
               {checkIn && checkOut && (
                 <div className="bg-muted/50 p-6 rounded-xl space-y-3 border border-border">
                   <div className="flex justify-between text-base">
-                    <span>KES {property.price_per_night} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                    <span className="font-semibold">KES {totalPrice}</span>
+                    <span>KES {property.price_per_night?.toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                    <span className="font-semibold">KES {totalPrice.toLocaleString()}</span>
                   </div>
+                  
+                  {paymentType === 'deposit' && (
+                    <div className="border-t border-border pt-3 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Deposit ({depositPercentage}%)</span>
+                        <span className="font-semibold text-primary">KES {depositAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Balance due later</span>
+                        <span>KES {balanceAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="border-t border-border pt-3 flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span className="text-primary">KES {totalPrice}</span>
+                    <span>{paymentType === 'deposit' ? 'Due Today' : 'Total'}</span>
+                    <span className="text-primary">KES {amountToPay.toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -584,7 +673,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
             {paymentMethod === 'stripe' && clientSecret && (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <StripePaymentForm
-                  totalPrice={totalPrice}
+                  totalPrice={amountToPay}
                   onSuccess={handlePaymentSuccess}
                 />
               </Elements>
@@ -593,7 +682,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
             {paymentMethod === 'paystack' && bookingId && user?.primaryEmailAddress?.emailAddress && (
               <PaystackPaymentForm
                 bookingId={bookingId}
-                totalPrice={totalPrice}
+                totalPrice={amountToPay}
                 email={user.primaryEmailAddress.emailAddress}
                 onSuccess={handlePaymentSuccess}
                 onStart={() => setHideContent(true)}
