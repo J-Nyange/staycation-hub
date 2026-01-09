@@ -10,15 +10,25 @@ import {
   Mail, 
   Phone, 
   FileText,
-  X 
+  X,
+  MessageSquare,
+  CheckCircle,
+  XCircle,
+  Utensils,
+  Accessibility
 } from "lucide-react";
-import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface BookingData {
   id: string;
   property_title: string;
   property_location: string;
   property_image: string;
+  property_description?: string;
   check_in: string;
   check_out: string;
   guests: number;
@@ -30,6 +40,12 @@ interface BookingData {
   accommodation_explanation?: string;
   status: string;
   payment_status: string;
+  // Group booking fields
+  is_group_booking?: boolean;
+  group_type?: string;
+  dietary_requirements?: string;
+  accessibility_needs?: string;
+  additional_services?: string[];
 }
 
 interface BookingNotificationModalProps {
@@ -66,12 +82,30 @@ const parseRequestsField = (requestsField: string | undefined | null) => {
   return { accommodation: null, special: requestsField };
 };
 
+const getPaymentStatusBadge = (status: string) => {
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    'awaiting_contact': { label: 'Awaiting Contact', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+    'pending': { label: 'Pending', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+    'paid': { label: 'Paid', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+    'paid_offline': { label: 'Paid Offline', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+    'completed': { label: 'Completed', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+  };
+  
+  const config = statusConfig[status] || { label: status, className: 'bg-muted text-muted-foreground' };
+  return <Badge className={config.className}>{config.label}</Badge>;
+};
+
 export default function BookingNotificationModal({
   open,
   onOpenChange,
   bookingData,
   isLoading = false,
 }: BookingNotificationModalProps) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState(false);
+
   if (!bookingData) {
     return null;
   }
@@ -81,11 +115,80 @@ export default function BookingNotificationModal({
     new Date(bookingData.check_in).getTime();
   const daysCount = Math.ceil(nights / (1000 * 60 * 60 * 24));
 
+  const handleConfirmBooking = async () => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'confirmed',
+          payment_status: 'paid_offline'
+        })
+        .eq('id', bookingData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Confirmed",
+        description: "The booking has been confirmed successfully.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['owner-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeclineBooking = async () => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'cancelled',
+          payment_status: 'cancelled'
+        })
+        .eq('id', bookingData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Declined",
+        description: "The booking request has been declined.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['owner-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleMessageGuest = () => {
+    onOpenChange(false);
+    navigate('/messages');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Booking Details</DialogTitle>
+          <DialogTitle className="text-2xl">Booking Request Details</DialogTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -121,25 +224,19 @@ export default function BookingNotificationModal({
                       <MapPin className="h-4 w-4" />
                       {bookingData.property_location}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Badge variant="outline">{bookingData.status}</Badge>
-                      <Badge
-                        className={
-                          bookingData.payment_status === "paid" ||
-                          bookingData.payment_status === "completed"
-                            ? "bg-green-500/10 text-green-500 border-green-500/20"
-                            : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                        }
-                      >
-                        Payment: {bookingData.payment_status}
-                      </Badge>
+                      {getPaymentStatusBadge(bookingData.payment_status)}
+                      {bookingData.is_group_booking && (
+                        <Badge variant="secondary">Group Booking</Badge>
+                      )}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Guest Information */}
+            {/* Guest Information with Contact Actions */}
             <Card>
               <CardContent className="pt-6">
                 <h4 className="font-semibold mb-4">Guest Information</h4>
@@ -148,15 +245,18 @@ export default function BookingNotificationModal({
                     <p className="text-sm text-muted-foreground">Name</p>
                     <p className="font-medium">{bookingData.guest_name}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Mail className="h-4 w-4" />
                         Email
                       </p>
-                      <p className="font-medium text-sm break-all">
+                      <a 
+                        href={`mailto:${bookingData.guest_email}`}
+                        className="font-medium text-sm text-primary hover:underline break-all"
+                      >
                         {bookingData.guest_email}
-                      </p>
+                      </a>
                     </div>
                     {bookingData.guest_phone && (
                       <div>
@@ -164,9 +264,40 @@ export default function BookingNotificationModal({
                           <Phone className="h-4 w-4" />
                           Phone
                         </p>
-                        <p className="font-medium text-sm">{bookingData.guest_phone}</p>
+                        <a 
+                          href={`tel:${bookingData.guest_phone}`}
+                          className="font-medium text-sm text-primary hover:underline"
+                        >
+                          {bookingData.guest_phone}
+                        </a>
                       </div>
                     )}
+                  </div>
+                  
+                  {/* Quick Contact Actions */}
+                  <div className="flex gap-2 pt-2">
+                    {bookingData.guest_phone && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        asChild
+                      >
+                        <a href={`tel:${bookingData.guest_phone}`}>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Guest
+                        </a>
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      asChild
+                    >
+                      <a href={`mailto:${bookingData.guest_email}`}>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email Guest
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -197,6 +328,56 @@ export default function BookingNotificationModal({
               </CardContent>
             </Card>
 
+            {/* Group Booking Details */}
+            {bookingData.is_group_booking && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Group Booking Details
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    {bookingData.group_type && (
+                      <div>
+                        <p className="text-muted-foreground text-xs">Group Type</p>
+                        <p className="font-medium capitalize">{bookingData.group_type}</p>
+                      </div>
+                    )}
+                    {bookingData.dietary_requirements && (
+                      <div>
+                        <p className="text-muted-foreground text-xs flex items-center gap-1">
+                          <Utensils className="h-3 w-3" />
+                          Dietary Requirements
+                        </p>
+                        <p className="font-medium">{bookingData.dietary_requirements}</p>
+                      </div>
+                    )}
+                    {bookingData.accessibility_needs && (
+                      <div>
+                        <p className="text-muted-foreground text-xs flex items-center gap-1">
+                          <Accessibility className="h-3 w-3" />
+                          Accessibility Needs
+                        </p>
+                        <p className="font-medium">{bookingData.accessibility_needs}</p>
+                      </div>
+                    )}
+                    {bookingData.additional_services && bookingData.additional_services.length > 0 && (
+                      <div>
+                        <p className="text-muted-foreground text-xs">Additional Services</p>
+                        <div className="flex gap-1 flex-wrap mt-1">
+                          {bookingData.additional_services.map((service) => (
+                            <Badge key={service} variant="secondary" className="text-xs">
+                              {service}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Payment Information */}
             <Card>
               <CardContent className="pt-6">
@@ -206,11 +387,13 @@ export default function BookingNotificationModal({
                 </h4>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <div className="flex justify-between mb-2">
-                    <span>Total Price</span>
+                    <span>Estimated Total Price</span>
                     <span className="font-semibold">KES {bookingData.total_price.toLocaleString()}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Status: {bookingData.payment_status}
+                    Status: {bookingData.payment_status === 'awaiting_contact' 
+                      ? 'Guest is waiting for you to contact them about payment' 
+                      : bookingData.payment_status}
                   </p>
                 </div>
               </CardContent>
@@ -254,15 +437,45 @@ export default function BookingNotificationModal({
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => onOpenChange(false)}
-              >
-                Close
-              </Button>
-              <Button className="flex-1">Message Guest</Button>
+            <div className="space-y-3 pt-4">
+              {bookingData.payment_status === 'awaiting_contact' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={handleConfirmBooking}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Confirm Booking
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={handleDeclineBooking}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Decline Request
+                  </Button>
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={handleMessageGuest}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Message Guest
+                </Button>
+              </div>
             </div>
           </div>
         )}
