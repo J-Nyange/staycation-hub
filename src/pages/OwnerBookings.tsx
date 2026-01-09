@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@clerk/clerk-react";
 import Navbar from "@/components/Navbar";
@@ -14,11 +14,13 @@ import { useBookingActions } from "@/hooks/useBookingActions";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useBookingNotificationDetails } from "@/hooks/useBookingNotificationDetails";
 import BookingNotificationModal from "@/components/notifications/BookingNotificationModal";
-import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle, Phone, Bell } from "lucide-react";
-import { format } from "date-fns";
+import { Calendar, Users, DollarSign, MessageSquare, CheckCircle, XCircle, Phone, Bell, Mail, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function OwnerBookings() {
   const { user } = useUser();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedMod, setSelectedMod] = useState<any>(null);
   const [response, setResponse] = useState("");
   const [selectedNotificationBookingId, setSelectedNotificationBookingId] = useState<string | null>(null);
@@ -77,6 +79,11 @@ export default function OwnerBookings() {
     },
   });
 
+  // Filter bookings by status
+  const bookingRequests = bookings?.filter(b => b.payment_status === 'awaiting_contact') || [];
+  const confirmedBookings = bookings?.filter(b => b.status === 'confirmed') || [];
+  const completedBookings = bookings?.filter(b => b.status === 'completed') || [];
+
   const handleRespondToModification = (status: "approved" | "rejected") => {
     if (!selectedMod) return;
     
@@ -91,6 +98,60 @@ export default function OwnerBookings() {
     );
   };
 
+  const handleConfirmBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'confirmed',
+          payment_status: 'paid_offline'
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Confirmed",
+        description: "The booking has been confirmed successfully.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['owner-bookings'] });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleDeclineBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'cancelled',
+          payment_status: 'cancelled'
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Declined",
+        description: "The booking request has been declined.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['owner-bookings'] });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       pending: "secondary",
@@ -99,6 +160,24 @@ export default function OwnerBookings() {
       completed: "outline",
     };
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      'awaiting_contact': { label: 'Awaiting Contact', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+      'pending': { label: 'Pending', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+      'paid': { label: 'Paid', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      'paid_offline': { label: 'Paid Offline', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+    };
+    
+    const config = statusConfig[status] || { label: status, className: 'bg-muted text-muted-foreground' };
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const formatDate = (dateString: string) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const [year, month, day] = dateString.split('-').map(Number);
+    return `${monthNames[month - 1]} ${day}, ${year}`;
   };
 
   if (isLoading) {
@@ -157,17 +236,199 @@ export default function OwnerBookings() {
           </Card>
         )}
 
-        <Tabs defaultValue="all" className="space-y-6">
+        <Tabs defaultValue="requests" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="all">All Bookings</TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending {modifications && modifications.length > 0 && `(${modifications.length})`}
+            <TabsTrigger value="requests" className="relative">
+              Booking Requests
+              {bookingRequests.length > 0 && (
+                <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {bookingRequests.length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="modifications">
+              Modifications {modifications && modifications.length > 0 && `(${modifications.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="all">All Bookings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pending" className="space-y-4">
+          {/* Booking Requests Tab */}
+          <TabsContent value="requests" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-5 w-5 text-blue-500" />
+              <p className="text-muted-foreground">
+                These guests are waiting for you to contact them about their booking requests.
+              </p>
+            </div>
+            
+            {bookingRequests.length > 0 ? (
+              <div className="grid gap-4">
+                {bookingRequests.map((booking: any) => (
+                  <Card key={booking.id} className="border-blue-500/20">
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold">{booking.property.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Guest: {booking.guest_name || `${booking.profile?.first_name || ''} ${booking.profile?.last_name || ''}`.trim() || 'Guest'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {getStatusBadge(booking.status)}
+                          {getPaymentStatusBadge(booking.payment_status)}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 text-sm mb-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(booking.check_in)} - {formatDate(booking.check_out)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.guests} guests</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span>KES {booking.total_price?.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Contact Info */}
+                      <div className="bg-muted/50 p-3 rounded-lg mb-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Contact Guest:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {booking.guest_phone && (
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={`tel:${booking.guest_phone}`}>
+                                <Phone className="h-4 w-4 mr-2" />
+                                {booking.guest_phone}
+                              </a>
+                            </Button>
+                          )}
+                          {booking.guest_email && (
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={`mailto:${booking.guest_email}`}>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Email
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleConfirmBooking(booking.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Confirm Booking
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleDeclineBooking(booking.id)}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Decline
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setSelectedNotificationBookingId(booking.id)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  No pending booking requests
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Confirmed Bookings Tab */}
+          <TabsContent value="confirmed" className="space-y-4">
+            {confirmedBookings.length > 0 ? (
+              <div className="grid gap-4">
+                {confirmedBookings.map((booking: any) => (
+                  <Card key={booking.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold">{booking.property.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Guest: {booking.guest_name || `${booking.profile?.first_name || ''} ${booking.profile?.last_name || ''}`.trim() || 'Guest'}
+                          </p>
+                          {(booking.guest_phone || booking.profile?.phone) && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3" />
+                              {booking.guest_phone || booking.profile?.phone}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {getStatusBadge(booking.status)}
+                          {getPaymentStatusBadge(booking.payment_status)}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(booking.check_in)} - {formatDate(booking.check_out)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{booking.guests} guests</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span>KES {booking.total_price?.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Message Guest
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => cancelBooking.mutate({ 
+                            bookingId: booking.id, 
+                            reason: "Cancelled by owner" 
+                          })}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  No confirmed bookings
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Modifications Tab */}
+          <TabsContent value="modifications" className="space-y-4">
             <h2 className="text-xl font-semibold">Modification Requests</h2>
             {modifications && modifications.length > 0 ? (
               <div className="grid gap-4">
@@ -188,29 +449,11 @@ export default function OwnerBookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="line-through text-muted-foreground">
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = mod.old_check_in.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}`;
-                            })()}{" "}-{" "}
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = mod.old_check_out.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}`;
-                            })()}
+                            {formatDate(mod.old_check_in)} - {formatDate(mod.old_check_out)}
                           </span>
                           <span className="mx-2">→</span>
                           <span className="text-primary font-medium">
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = mod.new_check_in.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}`;
-                            })()}{" "}-{" "}
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = mod.new_check_out.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}`;
-                            })()}
+                            {formatDate(mod.new_check_in)} - {formatDate(mod.new_check_out)}
                           </span>
                         </div>
                         {mod.reason && (
@@ -250,44 +493,30 @@ export default function OwnerBookings() {
             )}
           </TabsContent>
 
-          {["all", "confirmed", "completed"].map((tab) => (
-            <TabsContent key={tab} value={tab} className="space-y-4">
-              {bookings
-                ?.filter((b) => tab === "all" || b.status === tab)
-                .map((booking: any) => (
+          {/* All Bookings Tab */}
+          <TabsContent value="all" className="space-y-4">
+            {bookings && bookings.length > 0 ? (
+              <div className="grid gap-4">
+                {bookings.map((booking: any) => (
                   <Card key={booking.id}>
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="font-semibold">{booking.property.title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            Guest: {booking.profile.first_name} {booking.profile.last_name}
+                            Guest: {booking.guest_name || `${booking.profile?.first_name || ''} ${booking.profile?.last_name || ''}`.trim() || 'Guest'}
                           </p>
-                          {booking.profile.phone && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                              <Phone className="h-3 w-3" />
-                              {booking.profile.phone}
-                            </p>
-                          )}
                         </div>
-                        {getStatusBadge(booking.status)}
+                        <div className="flex gap-2">
+                          {getStatusBadge(booking.status)}
+                          {getPaymentStatusBadge(booking.payment_status)}
+                        </div>
                       </div>
 
                       <div className="grid gap-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = booking.check_in.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}, ${year}`;
-                            })()}{" "}-{" "}
-                            {(() => {
-                              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              const [year, month, day] = booking.check_out.split('-').map(Number);
-                              return `${monthNames[month - 1]} ${day}, ${year}`;
-                            })()}
-                          </span>
+                          <span>{formatDate(booking.check_in)} - {formatDate(booking.check_out)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
@@ -295,33 +524,21 @@ export default function OwnerBookings() {
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span>KES {booking.total_price.toFixed(2)}</span>
+                          <span>KES {booking.total_price?.toLocaleString()}</span>
                         </div>
-                      </div>
-
-                      <div className="flex gap-2 mt-4">
-                        <Button size="sm" variant="outline" className="flex-1">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Message Guest
-                        </Button>
-                        {booking.status === "confirmed" && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={() => cancelBooking.mutate({ 
-                              bookingId: booking.id, 
-                              reason: "Cancelled by owner" 
-                            })}
-                          >
-                            Cancel
-                          </Button>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
-            </TabsContent>
-          ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-muted-foreground">
+                  No bookings yet
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
