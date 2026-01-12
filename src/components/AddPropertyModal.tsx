@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { propertySchema, validateForm } from "@/lib/validations";
 
 interface AddPropertyModalProps {
   open: boolean;
@@ -33,6 +34,7 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
   const { user } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -59,43 +61,53 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
     e.preventDefault();
     if (!user) return;
 
-    // Validation
-    if (formData.description.length < 100) {
-      toast({
-        variant: "destructive",
-        title: "Description Required",
-        description: "Please provide a detailed description of at least 100 characters.",
-      });
-      return;
-    }
-
+    // Filter valid images (non-empty strings)
     const validImages = formData.images.filter(img => img.trim() !== '');
-    if (validImages.length < 3) {
+
+    // Validate with Zod schema
+    const validation = validateForm(propertySchema, {
+      title: formData.title,
+      description: formData.description,
+      location: formData.location,
+      category: formData.category || undefined,
+      price_per_night: formData.price_per_night ? parseFloat(formData.price_per_night) : undefined,
+      guests: formData.guests ? parseInt(formData.guests) : undefined,
+      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+      bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : null,
+      images: validImages,
+      amenities: formData.amenities,
+    });
+
+    if (!validation.success) {
+      setErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
       toast({
         variant: "destructive",
-        title: "Images Required",
-        description: "Please provide at least 3 property images.",
+        title: "Validation Error",
+        description: firstError,
       });
       return;
     }
 
+    const validatedData = validation.data;
+    setErrors({});
     setIsLoading(true);
 
     try {
       const { error } = await supabase
         .from('properties')
         .insert({
-          title: formData.title,
-          description: formData.description,
-          location: formData.location,
-          category: formData.category as 'airbnb' | 'villa' | 'homestay',
-          price_per_night: parseFloat(formData.price_per_night),
-          guests: parseInt(formData.guests),
-          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-          bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
-          main_image: validImages[0],
-          images: validImages,
-          amenities: formData.amenities,
+          title: validatedData.title,
+          description: validatedData.description,
+          location: validatedData.location,
+          category: validatedData.category,
+          price_per_night: validatedData.price_per_night,
+          guests: validatedData.guests,
+          bedrooms: validatedData.bedrooms,
+          bathrooms: validatedData.bathrooms,
+          main_image: validatedData.images[0],
+          images: validatedData.images,
+          amenities: validatedData.amenities || [],
           owner_id: user.id,
           is_active: true,
         });
@@ -148,8 +160,11 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                maxLength={100}
                 required
+                className={errors.title ? "border-destructive" : ""}
               />
+              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
             </div>
 
             <div className="space-y-2">
@@ -158,8 +173,11 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                maxLength={200}
                 required
+                className={errors.location ? "border-destructive" : ""}
               />
+              {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
             </div>
           </div>
 
@@ -172,8 +190,11 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
               rows={4}
               required
               minLength={100}
+              maxLength={5000}
               placeholder="Provide a detailed description of your property including amenities, location highlights, and what makes it special..."
+              className={errors.description ? "border-destructive" : ""}
             />
+            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
             <p className="text-sm text-muted-foreground">
               {formData.description.length}/100 characters
             </p>
@@ -200,10 +221,13 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
                 id="price"
                 type="number"
                 min="1"
+                max="1000000"
                 value={formData.price_per_night}
                 onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: e.target.value }))}
                 required
+                className={errors.price_per_night ? "border-destructive" : ""}
               />
+              {errors.price_per_night && <p className="text-sm text-destructive">{errors.price_per_night}</p>}
             </div>
           </div>
 
@@ -214,10 +238,13 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
                 id="guests"
                 type="number"
                 min="1"
+                max="50"
                 value={formData.guests}
                 onChange={(e) => setFormData(prev => ({ ...prev, guests: e.target.value }))}
                 required
+                className={errors.guests ? "border-destructive" : ""}
               />
+              {errors.guests && <p className="text-sm text-destructive">{errors.guests}</p>}
             </div>
 
             <div className="space-y-2">

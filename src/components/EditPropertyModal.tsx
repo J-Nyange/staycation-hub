@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
+import { propertySchema, validateForm } from "@/lib/validations";
 
 interface EditPropertyModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface EditPropertyModalProps {
 
 const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditPropertyModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -65,6 +67,7 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
         amenities: property.amenities || [],
         is_active: property.is_active ?? true,
       });
+      setErrors({});
     }
   }, [property, open]);
 
@@ -80,43 +83,55 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.description.length < 100) {
-      toast({
-        variant: "destructive",
-        title: "Description Required",
-        description: "Please provide a detailed description of at least 100 characters.",
-      });
-      return;
-    }
-
+    // Filter valid images (non-empty strings)
     const validImages = formData.images.filter(img => img.trim() !== '');
-    if (validImages.length < 3) {
+
+    // Validate with Zod schema
+    const validation = validateForm(propertySchema, {
+      title: formData.title,
+      description: formData.description,
+      location: formData.location,
+      category: formData.category || undefined,
+      price_per_night: formData.price_per_night ? parseFloat(formData.price_per_night) : undefined,
+      guests: formData.guests ? parseInt(formData.guests) : undefined,
+      bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+      bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : null,
+      images: validImages,
+      amenities: formData.amenities,
+      is_active: formData.is_active,
+    });
+
+    if (!validation.success) {
+      setErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
       toast({
         variant: "destructive",
-        title: "Images Required",
-        description: "Please provide at least 3 property images.",
+        title: "Validation Error",
+        description: firstError,
       });
       return;
     }
 
+    const validatedData = validation.data;
+    setErrors({});
     setIsLoading(true);
 
     try {
       const { error } = await supabase
         .from('properties')
         .update({
-          title: formData.title,
-          description: formData.description,
-          location: formData.location,
-          category: formData.category as 'airbnb' | 'villa' | 'homestay',
-          price_per_night: parseFloat(formData.price_per_night),
-          guests: parseInt(formData.guests),
-          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
-          bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
-          main_image: validImages[0],
-          images: validImages,
-          amenities: formData.amenities,
-          is_active: formData.is_active,
+          title: validatedData.title,
+          description: validatedData.description,
+          location: validatedData.location,
+          category: validatedData.category,
+          price_per_night: validatedData.price_per_night,
+          guests: validatedData.guests,
+          bedrooms: validatedData.bedrooms,
+          bathrooms: validatedData.bathrooms,
+          main_image: validatedData.images[0],
+          images: validatedData.images,
+          amenities: validatedData.amenities || [],
+          is_active: validatedData.is_active,
         })
         .eq('id', property.id);
 
@@ -164,36 +179,45 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Property Title *</Label>
+              <Label htmlFor="edit-title">Property Title *</Label>
               <Input
-                id="title"
+                id="edit-title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                maxLength={100}
                 required
+                className={errors.title ? "border-destructive" : ""}
               />
+              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+              <Label htmlFor="edit-location">Location *</Label>
               <Input
-                id="location"
+                id="edit-location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                maxLength={200}
                 required
+                className={errors.location ? "border-destructive" : ""}
               />
+              {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description * (minimum 100 characters)</Label>
+            <Label htmlFor="edit-description">Description * (minimum 100 characters)</Label>
             <Textarea
-              id="description"
+              id="edit-description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
               required
               minLength={100}
+              maxLength={5000}
+              className={errors.description ? "border-destructive" : ""}
             />
+            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
             <p className="text-sm text-muted-foreground">
               {formData.description.length}/100 characters
             </p>
@@ -215,29 +239,35 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Price per Night (USD) *</Label>
+              <Label htmlFor="edit-price">Price per Night (USD) *</Label>
               <Input
-                id="price"
+                id="edit-price"
                 type="number"
                 min="1"
+                max="1000000"
                 value={formData.price_per_night}
                 onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: e.target.value }))}
                 required
+                className={errors.price_per_night ? "border-destructive" : ""}
               />
+              {errors.price_per_night && <p className="text-sm text-destructive">{errors.price_per_night}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="guests">Max Guests *</Label>
+              <Label htmlFor="edit-guests">Max Guests *</Label>
               <Input
-                id="guests"
+                id="edit-guests"
                 type="number"
                 min="1"
+                max="50"
                 value={formData.guests}
                 onChange={(e) => setFormData(prev => ({ ...prev, guests: e.target.value }))}
                 required
+                className={errors.guests ? "border-destructive" : ""}
               />
+              {errors.guests && <p className="text-sm text-destructive">{errors.guests}</p>}
             </div>
 
             <div className="space-y-2">
