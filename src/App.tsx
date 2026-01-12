@@ -75,10 +75,10 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
         <TooltipProvider>
-          <BookingModalProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <BookingModalProvider>
               <CookieBanner />
               <PWAInstallPrompt />
               <ComparisonBar />
@@ -112,8 +112,8 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </BookingModalProvider>
+            </BookingModalProvider>
+          </BrowserRouter>
         </TooltipProvider>
       </HelmetProvider>
     </QueryClientProvider>
