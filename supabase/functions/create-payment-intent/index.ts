@@ -27,8 +27,6 @@ serve(async (req) => {
 
     const { property_id, check_in, check_out, guests, total_price, special_requests, booking_id } = await req.json();
 
-    console.log("Checking availability for:", { property_id, check_in, check_out, booking_id });
-
     // Validate availability
     if (booking_id) {
       // Exclude the current booking from the check since we just created it
@@ -43,12 +41,11 @@ serve(async (req) => {
         .neq('id', booking_id);
         
       if (conflictError) {
-        console.error("Error checking conflicts:", conflictError);
+        console.error("Error checking conflicts");
         throw new Error("Failed to check availability");
       }
 
       if (conflicts && conflicts.length > 0) {
-        console.log("Conflict found (excluding current):", conflicts);
         throw new Error("Property is not available for selected dates");
       }
     } else {
@@ -61,12 +58,11 @@ serve(async (req) => {
         .lte('check_in', check_out);
 
       if (conflictError) {
-        console.error("Error checking conflicts:", conflictError);
+        console.error("Error checking conflicts");
         throw new Error("Failed to check availability");
       }
 
       if (conflicts && conflicts.length > 0) {
-        console.log("Conflict found:", conflicts);
         throw new Error("Property is not available for selected dates");
       }
     }
@@ -129,7 +125,7 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error in create-payment-intent:", error);
+    console.error("Error in create-payment-intent:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

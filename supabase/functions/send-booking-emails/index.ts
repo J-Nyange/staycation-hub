@@ -14,6 +14,16 @@ interface BookingEmailRequest {
   type: 'confirmation' | 'reminder' | 'review_request';
 }
 
+// Escape HTML entities for safe email content
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,22 +73,28 @@ const handler = async (req: Request): Promise<Response> => {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
     });
 
+    // Escape user-provided content
+    const safeGuestName = escapeHtml(guestName);
+    const safePropertyTitle = escapeHtml(propertyTitle);
+    const safePropertyLocation = escapeHtml(booking.properties.location);
+    const safeSpecialRequests = booking.special_requests ? escapeHtml(booking.special_requests) : null;
+
     if (type === 'confirmation') {
       // Send confirmation email to guest
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
-        subject: `Booking Confirmed - ${propertyTitle}`,
+        subject: `Booking Confirmed - ${safePropertyTitle}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #0EA5E9;">Booking Confirmed! 🎉</h1>
-            <p>Dear ${guestName},</p>
+            <p>Dear ${safeGuestName},</p>
             <p>Your booking has been confirmed. We're excited to host you!</p>
             
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h2 style="margin-top: 0;">Booking Details</h2>
-              <p><strong>Property:</strong> ${propertyTitle}</p>
-              <p><strong>Location:</strong> ${booking.properties.location}</p>
+              <p><strong>Property:</strong> ${safePropertyTitle}</p>
+              <p><strong>Location:</strong> ${safePropertyLocation}</p>
               <p><strong>Check-in:</strong> ${checkIn}</p>
               <p><strong>Check-out:</strong> ${checkOut}</p>
               <p><strong>Guests:</strong> ${booking.guests}</p>
@@ -86,10 +102,10 @@ const handler = async (req: Request): Promise<Response> => {
               <p><strong>Booking Reference:</strong> ${booking.id.substring(0, 8).toUpperCase()}</p>
             </div>
 
-            ${booking.special_requests ? `
+            ${safeSpecialRequests ? `
               <div style="margin: 20px 0;">
                 <h3>Special Requests</h3>
-                <p>${booking.special_requests}</p>
+                <p>${safeSpecialRequests}</p>
               </div>
             ` : ''}
 
@@ -120,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
           await resend.emails.send({
             from: "Lukemanbnb <onboarding@resend.dev>",
             to: [ownerUser.email],
-            subject: `New Booking - ${propertyTitle}`,
+            subject: `New Booking - ${safePropertyTitle}`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h1 style="color: #0EA5E9;">New Booking Received! 🏠</h1>
@@ -128,8 +144,8 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                   <h2 style="margin-top: 0;">Booking Details</h2>
-                  <p><strong>Property:</strong> ${propertyTitle}</p>
-                  <p><strong>Guest:</strong> ${guestName}</p>
+                  <p><strong>Property:</strong> ${safePropertyTitle}</p>
+                  <p><strong>Guest:</strong> ${safeGuestName}</p>
                   <p><strong>Check-in:</strong> ${checkIn}</p>
                   <p><strong>Check-out:</strong> ${checkOut}</p>
                   <p><strong>Guests:</strong> ${booking.guests}</p>
@@ -148,17 +164,17 @@ const handler = async (req: Request): Promise<Response> => {
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
-        subject: `Reminder: Check-in Tomorrow - ${propertyTitle}`,
+        subject: `Reminder: Check-in Tomorrow - ${safePropertyTitle}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #0EA5E9;">Your Stay Begins Tomorrow! 🎉</h1>
-            <p>Dear ${guestName},</p>
+            <p>Dear ${safeGuestName},</p>
             <p>This is a friendly reminder that your check-in is tomorrow.</p>
             
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h2 style="margin-top: 0;">Check-in Details</h2>
-              <p><strong>Property:</strong> ${propertyTitle}</p>
-              <p><strong>Location:</strong> ${booking.properties.location}</p>
+              <p><strong>Property:</strong> ${safePropertyTitle}</p>
+              <p><strong>Location:</strong> ${safePropertyLocation}</p>
               <p><strong>Check-in:</strong> ${checkIn}</p>
               <p><strong>Booking Reference:</strong> ${booking.id.substring(0, 8).toUpperCase()}</p>
             </div>
@@ -173,12 +189,12 @@ const handler = async (req: Request): Promise<Response> => {
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
         to: [guestUser.email],
-        subject: `How was your stay at ${propertyTitle}?`,
+        subject: `How was your stay at ${safePropertyTitle}?`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #0EA5E9;">We'd Love Your Feedback! ⭐</h1>
-            <p>Dear ${guestName},</p>
-            <p>We hope you enjoyed your stay at ${propertyTitle}!</p>
+            <p>Dear ${safeGuestName},</p>
+            <p>We hope you enjoyed your stay at ${safePropertyTitle}!</p>
             
             <p>Your feedback helps other guests make informed decisions and helps property owners improve their service.</p>
             
@@ -204,7 +220,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error sending booking emails:", error);
+    console.error("Error sending booking emails:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
