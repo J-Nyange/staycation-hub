@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Star, Loader2, BadgeCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { reviewSchema, validateForm } from '@/lib/validations';
 
 interface ReviewFormProps {
   propertyId: string;
@@ -19,24 +20,40 @@ export default function ReviewForm({ propertyId, bookingId, onReviewSubmitted }:
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { user } = useUser();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || rating === 0) return;
+    if (!user) return;
 
+    // Validate form data
+    const validation = validateForm(reviewSchema, {
+      rating,
+      comment: comment.trim() || undefined,
+    });
+
+    if (!validation.success) {
+      setErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
+      toast({ variant: "destructive", title: "Validation Error", description: firstError });
+      return;
+    }
+    
+    const validatedData = validation.data;
+
+    setErrors({});
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('reviews').insert({
         user_id: user.id,
         property_id: propertyId,
         booking_id: bookingId || null,
-        rating,
-        comment: comment.trim() || null,
+        rating: validatedData.rating,
+        comment: validatedData.comment || null,
         is_verified: !!bookingId,
       });
-
       if (error) throw error;
       toast({ title: "Review Submitted!", description: "Thank you for your feedback!" });
       setRating(0);
@@ -85,7 +102,12 @@ export default function ReviewForm({ propertyId, bookingId, onReviewSubmitted }:
               onChange={(e) => setComment(e.target.value)}
               rows={5}
               maxLength={1000}
+              className={errors.comment ? "border-destructive" : ""}
             />
+            {errors.comment && (
+              <p className="text-sm text-destructive">{errors.comment}</p>
+            )}
+            <p className="text-xs text-muted-foreground">{comment.length}/1000 characters</p>
           </div>
 
           <Button type="submit" className="w-full" disabled={isSubmitting || rating === 0}>
