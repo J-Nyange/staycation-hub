@@ -18,6 +18,16 @@ interface ContactFormRequest {
   message: string;
 }
 
+// Escape HTML entities to prevent XSS in emails
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Contact form function invoked");
 
@@ -28,53 +38,82 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const data: ContactFormRequest = await req.json();
-    console.log("Received contact form data:", { ...data, message: data.message.substring(0, 50) + "..." });
-
-    // Validate input
+    
+    // Validate required fields
     if (!data.firstName || !data.lastName || !data.email || !data.message) {
       throw new Error("Missing required fields");
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
+    // Input length limits to prevent abuse
+    if (data.firstName.length > 100) {
+      throw new Error("First name too long");
+    }
+    if (data.lastName.length > 100) {
+      throw new Error("Last name too long");
+    }
+    if (data.subject && data.subject.length > 200) {
+      throw new Error("Subject too long");
+    }
+    if (data.message.length > 5000) {
+      throw new Error("Message too long");
+    }
+    if (data.phone && data.phone.length > 30) {
+      throw new Error("Phone number too long");
+    }
+
+    // Email validation - strict regex to prevent header injection
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(data.email) || data.email.length > 255) {
       throw new Error("Invalid email format");
     }
+
+    // Sanitize all user inputs before using in HTML
+    const safeFirstName = escapeHtml(data.firstName.trim());
+    const safeLastName = escapeHtml(data.lastName.trim());
+    const safeEmail = escapeHtml(data.email.trim());
+    const safePhone = escapeHtml((data.phone || 'Not provided').trim());
+    const safeSubject = escapeHtml((data.subject || 'No subject').trim());
+    const safeMessage = escapeHtml(data.message.trim()).replace(/\n/g, '<br>');
 
     // Send email to property owner
     const ownerEmailResponse = await resend.emails.send({
       from: "Lukemanbnb Contact <onboarding@resend.dev>",
       to: ["vilahorizon04@gmail.com"], // Owner's email
-      subject: `New Contact Form: ${data.subject}`,
+      subject: `New Contact Form: ${safeSubject}`,
       html: `
         <h2>New Contact Form Submission</h2>
-        <p><strong>From:</strong> ${data.firstName} ${data.lastName}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        <p><strong>Phone:</strong> ${data.phone || 'Not provided'}</p>
-        <p><strong>Subject:</strong> ${data.subject}</p>
+        <p><strong>From:</strong> ${safeFirstName} ${safeLastName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Phone:</strong> ${safePhone}</p>
+        <p><strong>Subject:</strong> ${safeSubject}</p>
         <p><strong>Message:</strong></p>
-        <p>${data.message.replace(/\n/g, '<br>')}</p>
+        <p>${safeMessage}</p>
       `,
     });
 
-    console.log("Owner email sent successfully:", ownerEmailResponse);
+    if (ownerEmailResponse.error) {
+      console.error("Error sending owner email");
+      throw new Error("Failed to send email");
+    }
 
     // Send confirmation email to user
     const userEmailResponse = await resend.emails.send({
       from: "Lukemanbnb <onboarding@resend.dev>",
-      to: [data.email],
+      to: [data.email.trim()],
       subject: "We received your message!",
       html: `
-        <h1>Thank you for contacting us, ${data.firstName}!</h1>
+        <h1>Thank you for contacting us, ${safeFirstName}!</h1>
         <p>We have received your message and will get back to you as soon as possible.</p>
         <p><strong>Your message:</strong></p>
-        <p>${data.message.replace(/\n/g, '<br>')}</p>
+        <p>${safeMessage}</p>
         <br>
         <p>Best regards,<br>The Lukemanbnb Team</p>
       `,
     });
 
-    console.log("Confirmation email sent successfully:", userEmailResponse);
+    if (userEmailResponse.error) {
+      console.error("Error sending confirmation email");
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -90,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in contact-form function:", error);
+    console.error("Error in contact-form function:", error.message);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send message"

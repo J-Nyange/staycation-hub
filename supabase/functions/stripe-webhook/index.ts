@@ -24,8 +24,6 @@ serve(async (req) => {
     
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret || "");
 
-    console.log(`Processing webhook event: ${event.type}`);
-
     switch (event.type) {
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -161,7 +159,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
-    console.error("Webhook error:", error);
+    console.error("Webhook error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { "Content-Type": "application/json" },
       status: 400,

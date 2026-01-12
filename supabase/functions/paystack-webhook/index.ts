@@ -42,12 +42,11 @@ serve(async (req) => {
     const hash = await createHmacSha512(secret, body);
     
     if (hash !== signature) {
-      console.log("Invalid Paystack webhook signature");
+      console.error("Invalid Paystack webhook signature");
       return new Response("Invalid signature", { status: 401 });
     }
 
     const event = JSON.parse(body);
-    console.log("Paystack webhook event:", event.event);
 
     switch (event.event) {
       case "charge.success": {
@@ -70,30 +69,25 @@ serve(async (req) => {
             .eq("id", bookingId);
 
           if (error) {
-            console.error("Error updating booking:", error);
-          } else {
-            console.log(`Booking ${bookingId} confirmed via webhook`);
+            console.error("Error updating booking");
           }
         }
         break;
       }
 
       case "transfer.success": {
-        // Handle payout success
-        const data = event.data;
-        console.log("Transfer successful:", data.reference);
+        // Handle payout success - no sensitive data logged
         break;
       }
 
       case "transfer.failed": {
-        // Handle payout failure
-        const data = event.data;
-        console.log("Transfer failed:", data.reference);
+        // Handle payout failure - no sensitive data logged
         break;
       }
 
       default:
-        console.log("Unhandled Paystack event:", event.event);
+        // Unhandled event type - no logging of event details
+        break;
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -101,7 +95,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: unknown) {
-    console.error("Paystack webhook error:", error);
+    console.error("Paystack webhook error:", (error as Error).message);
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

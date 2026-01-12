@@ -27,8 +27,6 @@ serve(async (req) => {
 
     const { booking_id, payment_method } = await req.json();
 
-    console.log("Processing balance payment for booking:", booking_id);
-
     // Get booking details
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
@@ -77,8 +75,6 @@ serve(async (req) => {
         },
       });
 
-      console.log("Created balance payment intent:", paymentIntent.id);
-
       return new Response(
         JSON.stringify({ 
           clientSecret: paymentIntent.client_secret,
@@ -101,7 +97,7 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error("Error in pay-balance:", error);
+    console.error("Error in pay-balance:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

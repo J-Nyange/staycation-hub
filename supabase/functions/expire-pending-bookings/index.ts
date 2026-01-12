@@ -12,8 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Running expire-pending-bookings function...')
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
@@ -33,13 +31,13 @@ Deno.serve(async (req) => {
       .lt('expires_at', new Date().toISOString())
 
     if (fetchError) {
-      console.error('Error fetching expired bookings:', fetchError)
+      console.error('Error fetching expired bookings');
       throw fetchError
     }
 
-    console.log(`Found ${expiredBookings?.length || 0} expired bookings`)
+    const expiredCount = expiredBookings?.length || 0;
 
-    if (!expiredBookings || expiredBookings.length === 0) {
+    if (!expiredBookings || expiredCount === 0) {
       return new Response(
         JSON.stringify({ message: 'No expired bookings found', count: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -61,7 +59,7 @@ Deno.serve(async (req) => {
             .eq('id', booking.id)
 
           if (updateError) {
-            console.error(`Error updating booking ${booking.id}:`, updateError)
+            console.error('Error updating booking');
             return { id: booking.id, success: false, error: updateError.message }
           }
 
@@ -82,13 +80,12 @@ Deno.serve(async (req) => {
             })
 
           if (notificationError) {
-            console.error(`Error creating notification for booking ${booking.id}:`, notificationError)
+            console.error('Error creating notification');
           }
 
-          console.log(`Successfully expired booking ${booking.id}`)
           return { id: booking.id, success: true }
         } catch (err) {
-          console.error(`Error processing booking ${booking.id}:`, err)
+          console.error('Error processing booking');
           return { id: booking.id, success: false, error: (err as Error).message }
         }
       })
@@ -96,8 +93,6 @@ Deno.serve(async (req) => {
 
     const successCount = results.filter(r => r.success).length
     const failCount = results.filter(r => !r.success).length
-
-    console.log(`Processed ${results.length} bookings: ${successCount} succeeded, ${failCount} failed`)
 
     return new Response(
       JSON.stringify({
@@ -110,7 +105,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error in expire-pending-bookings function:', error)
+    console.error('Error in expire-pending-bookings function:', (error as Error).message)
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

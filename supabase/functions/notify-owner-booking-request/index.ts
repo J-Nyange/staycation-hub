@@ -13,9 +13,17 @@ interface NotifyOwnerRequest {
   booking_id: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  console.log("notify-owner-booking-request: Function called");
+// Escape HTML entities for safe email content
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
 
+const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,7 +35,6 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { booking_id }: NotifyOwnerRequest = await req.json();
-    console.log("notify-owner-booking-request: Processing booking", booking_id);
 
     // Fetch booking details with property and owner info
     const { data: booking, error: bookingError } = await supabaseAdmin
@@ -42,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (bookingError) {
-      console.error("notify-owner-booking-request: Error fetching booking", bookingError);
+      console.error("Error fetching booking");
       throw bookingError;
     }
 
@@ -50,13 +57,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Booking not found");
     }
 
-    console.log("notify-owner-booking-request: Booking found", booking.id);
-
     const property = booking.properties;
     const ownerId = property.owner_id;
 
     if (!ownerId) {
-      console.log("notify-owner-booking-request: No owner_id found for property");
       return new Response(JSON.stringify({ success: true, message: "No owner to notify" }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -97,9 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
     if (notificationError) {
-      console.error("notify-owner-booking-request: Error creating notification", notificationError);
-    } else {
-      console.log("notify-owner-booking-request: In-app notification created");
+      console.error("Error creating notification");
     }
 
     // Get owner profile to find email
@@ -120,13 +122,19 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to owner if email is available
     const ownerEmail = ownerProfile?.email;
     if (ownerEmail) {
-      console.log("notify-owner-booking-request: Sending email to owner", ownerEmail);
-      
       try {
+        // Escape all user-provided content
+        const safeGuestName = escapeHtml(guestName);
+        const safePropertyTitle = escapeHtml(property.title);
+        const safePropertyLocation = escapeHtml(property.location);
+        const safeGuestEmail = escapeHtml(booking.guest_email || '');
+        const safeGuestPhone = guestPhone ? escapeHtml(guestPhone) : null;
+        const safeSpecialRequests = booking.special_requests ? escapeHtml(booking.special_requests) : null;
+
         await resend.emails.send({
           from: "Lukemanbnb <onboarding@resend.dev>",
           to: [ownerEmail],
-          subject: `New Booking Request - ${property.title}`,
+          subject: `New Booking Request - ${safePropertyTitle}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h1 style="color: #0EA5E9;">New Booking Request! 📬</h1>
@@ -134,8 +142,8 @@ const handler = async (req: Request): Promise<Response> => {
               
               <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h2 style="margin-top: 0;">Booking Details</h2>
-                <p><strong>Property:</strong> ${property.title}</p>
-                <p><strong>Location:</strong> ${property.location}</p>
+                <p><strong>Property:</strong> ${safePropertyTitle}</p>
+                <p><strong>Location:</strong> ${safePropertyLocation}</p>
                 <p><strong>Check-in:</strong> ${checkIn}</p>
                 <p><strong>Check-out:</strong> ${checkOut}</p>
                 <p><strong>Guests:</strong> ${booking.guests}</p>
@@ -144,15 +152,15 @@ const handler = async (req: Request): Promise<Response> => {
 
               <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h2 style="margin-top: 0;">Guest Information</h2>
-                <p><strong>Name:</strong> ${guestName}</p>
-                <p><strong>Email:</strong> <a href="mailto:${booking.guest_email}">${booking.guest_email}</a></p>
-                ${guestPhone ? `<p><strong>Phone:</strong> <a href="tel:${guestPhone}">${guestPhone}</a></p>` : ''}
+                <p><strong>Name:</strong> ${safeGuestName}</p>
+                <p><strong>Email:</strong> <a href="mailto:${safeGuestEmail}">${safeGuestEmail}</a></p>
+                ${safeGuestPhone ? `<p><strong>Phone:</strong> <a href="tel:${safeGuestPhone}">${safeGuestPhone}</a></p>` : ''}
               </div>
 
-              ${booking.special_requests ? `
+              ${safeSpecialRequests ? `
                 <div style="margin: 20px 0;">
                   <h3>Special Requests</h3>
-                  <p style="background-color: #fef3c7; padding: 15px; border-radius: 8px;">${booking.special_requests}</p>
+                  <p style="background-color: #fef3c7; padding: 15px; border-radius: 8px;">${safeSpecialRequests}</p>
                 </div>
               ` : ''}
 
@@ -170,13 +178,10 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
           `,
         });
-        console.log("notify-owner-booking-request: Email sent successfully");
       } catch (emailError) {
-        console.error("notify-owner-booking-request: Error sending email", emailError);
+        console.error("Error sending owner notification email");
         // Don't throw - email failure shouldn't fail the whole request
       }
-    } else {
-      console.log("notify-owner-booking-request: No owner email found, skipping email notification");
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -184,7 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("notify-owner-booking-request: Error", error);
+    console.error("Error in notify-owner-booking-request:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
