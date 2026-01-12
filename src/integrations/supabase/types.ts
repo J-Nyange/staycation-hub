@@ -1056,6 +1056,30 @@ export type Database = {
         }
         Relationships: []
       }
+      public_owner_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          first_name: string | null
+          is_property_owner: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          first_name?: string | null
+          is_property_owner?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          first_name?: string | null
+          is_property_owner?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_revenue_by_month: {
