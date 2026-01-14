@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Info, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus, CheckCircle, Phone } from "lucide-react";
+import { Info, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus, CheckCircle, Phone, Mail, User } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -44,6 +45,12 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const [accommodationExplanation, setAccommodationExplanation] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+  // Guest Contact Info
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [contactErrors, setContactErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
+
   // Group Booking State
   const [isGroupBooking, setIsGroupBooking] = useState(false);
   const [groupType, setGroupType] = useState('');
@@ -62,9 +69,48 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     }));
   };
 
+  // Pre-populate guest contact info from Clerk
+  useEffect(() => {
+    if (user) {
+      setGuestName(user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || "");
+      setGuestEmail(user.primaryEmailAddress?.emailAddress || "");
+      setGuestPhone(user.primaryPhoneNumber?.phoneNumber || "");
+    }
+  }, [user]);
+
+  const validateContactInfo = (): boolean => {
+    const errors: { name?: string; email?: string; phone?: string } = {};
+    
+    if (!guestName.trim() || guestName.trim().length < 2) {
+      errors.name = "Name must be at least 2 characters";
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!guestEmail.trim() || !emailRegex.test(guestEmail.trim())) {
+      errors.email = "Please enter a valid email address";
+    }
+    
+    if (!guestPhone.trim() || guestPhone.trim().length < 10) {
+      errors.phone = "Phone number must be at least 10 characters";
+    }
+    
+    setContactErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !checkIn || !checkOut) return;
+
+    // Validate contact info
+    if (!validateContactInfo()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Contact Information",
+        description: "Please fill in all required contact fields.",
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -88,9 +134,9 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           ].filter(Boolean).join('\n\n') || null,
           status: 'pending',
           payment_status: 'awaiting_contact',
-          guest_email: user.primaryEmailAddress?.emailAddress,
-          guest_phone: user.primaryPhoneNumber?.phoneNumber,
-          guest_name: user.fullName || user.firstName || 'Guest',
+          guest_email: guestEmail.trim(),
+          guest_phone: guestPhone.trim(),
+          guest_name: guestName.trim(),
           // Group booking fields
           is_group_booking: isGroupBooking,
           group_size: isGroupBooking ? totalGuests : null,
@@ -143,6 +189,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setAccommodationExplanation('');
     setAcceptedTerms(false);
     setIsSuccess(false);
+    // Reset guest contact (will be re-populated from Clerk on next open)
+    setGuestName("");
+    setGuestEmail("");
+    setGuestPhone("");
+    setContactErrors({});
     // Reset group booking
     setIsGroupBooking(false);
     setGroupType('');
@@ -220,6 +271,82 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               After you submit this request, the property owner will contact you to discuss pricing and arrange payment. You will not be charged through this website.
             </AlertDescription>
           </Alert>
+
+          {/* Guest Contact Information */}
+          <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-base">Your Contact Information</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              The property owner will use this information to contact you about your booking.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="guest-name" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="guest-name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={guestName}
+                  onChange={(e) => {
+                    setGuestName(e.target.value);
+                    if (contactErrors.name) setContactErrors(prev => ({ ...prev, name: undefined }));
+                  }}
+                  className={cn(contactErrors.name && "border-destructive")}
+                />
+                {contactErrors.name && (
+                  <p className="text-xs text-destructive">{contactErrors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="guest-email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="guest-email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={guestEmail}
+                  onChange={(e) => {
+                    setGuestEmail(e.target.value);
+                    if (contactErrors.email) setContactErrors(prev => ({ ...prev, email: undefined }));
+                  }}
+                  className={cn(contactErrors.email && "border-destructive")}
+                />
+                {contactErrors.email && (
+                  <p className="text-xs text-destructive">{contactErrors.email}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="guest-phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Phone Number <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="guest-phone"
+                  type="tel"
+                  placeholder="+254 7XX XXX XXX"
+                  value={guestPhone}
+                  onChange={(e) => {
+                    setGuestPhone(e.target.value);
+                    if (contactErrors.phone) setContactErrors(prev => ({ ...prev, phone: undefined }));
+                  }}
+                  className={cn(contactErrors.phone && "border-destructive")}
+                />
+                {contactErrors.phone && (
+                  <p className="text-xs text-destructive">{contactErrors.phone}</p>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Date Selection - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -517,7 +644,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           <Button
             type="submit"
             className="w-full h-12 text-lg"
-            disabled={!checkIn || !checkOut || (totalGuests > property.guests && !accommodationExplanation) || !acceptedTerms || isLoading}
+            disabled={!checkIn || !checkOut || !guestName.trim() || !guestEmail.trim() || !guestPhone.trim() || (totalGuests > property.guests && !accommodationExplanation) || !acceptedTerms || isLoading}
           >
             {isLoading ? (
               <>

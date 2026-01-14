@@ -185,6 +185,7 @@ export type Database = {
           group_size: number | null
           group_type: string | null
           guest_email: string | null
+          guest_name: string | null
           guest_phone: string | null
           guests: number
           id: string
@@ -227,6 +228,7 @@ export type Database = {
           group_size?: number | null
           group_type?: string | null
           guest_email?: string | null
+          guest_name?: string | null
           guest_phone?: string | null
           guests: number
           id?: string
@@ -269,6 +271,7 @@ export type Database = {
           group_size?: number | null
           group_type?: string | null
           guest_email?: string | null
+          guest_name?: string | null
           guest_phone?: string | null
           guests?: number
           id?: string
