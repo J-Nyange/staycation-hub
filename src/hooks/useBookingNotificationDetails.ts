@@ -28,7 +28,7 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
     queryFn: async () => {
       if (!bookingId) return null;
 
-      // Fetch booking with guest email from Clerk
+      // Fetch booking with guest details
       const { data: booking, error } = await supabase
         .from("bookings")
         .select(`
@@ -43,11 +43,18 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
           user_id,
           guest_email,
           guest_phone,
+          guest_name,
+          is_group_booking,
+          group_type,
+          dietary_requirements,
+          accessibility_needs,
+          additional_services,
           properties (
             id,
             title,
             location,
-            main_image
+            main_image,
+            description
           ),
           profiles:user_id (
             first_name,
@@ -62,7 +69,10 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
       if (error) throw error;
       if (!booking) return null;
 
-      // Get guest email from booking snapshot or profile
+      // Get guest info from booking snapshot (preferred) or profile (fallback)
+      const guestName = (booking as any).guest_name || 
+        `${(booking as any).profiles?.first_name || ""} ${(booking as any).profiles?.last_name || ""}`.trim() || 
+        "Guest";
       const guestEmail = (booking as any).guest_email || (booking as any).profiles?.email || "No email available";
       const guestPhone = (booking as any).guest_phone || (booking as any).profiles?.phone || undefined;
 
@@ -75,7 +85,7 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
         check_out: (booking as any).check_out,
         guests: (booking as any).guests,
         total_price: (booking as any).total_price,
-        guest_name: `${(booking as any).profiles?.first_name || ""} ${(booking as any).profiles?.last_name || ""}`.trim() || "Guest",
+        guest_name: guestName,
         guest_email: guestEmail,
         guest_phone: guestPhone,
         special_requests: (booking as any).special_requests || undefined,
