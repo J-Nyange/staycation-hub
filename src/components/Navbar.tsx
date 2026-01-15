@@ -62,7 +62,7 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-16">
           
           {/* Mobile Header */}
@@ -80,7 +80,7 @@ const Navbar = () => {
                     {/* Menu Header */}
                     <div className="p-4 border-b border-border">
                       <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-                        <img src="/Logo/lukemanLogo.png" className="h-10 object-contain" alt="Logo" />
+                        <img src="/Logo/lukemanLogo.png" className="h-14 object-contain" alt="Logo" />
                       </Link>
                     </div>
                     
@@ -265,7 +265,7 @@ const Navbar = () => {
               to="/" 
               className="flex items-center flex-shrink-0 transition-all duration-300 hover:scale-105"
             >
-              <img src="/Logo/lukemanLogo.png" className="h-10 lg:h-11 object-contain" alt="Logo" />
+              <img src="/Logo/lukemanLogo.png" className="h-14 lg:h-14 object-contain" alt="Logo" />
             </Link>
 
             {/* Center: Navigation Links */}

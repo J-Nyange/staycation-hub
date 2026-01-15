@@ -34,12 +34,12 @@ const Footer = () => {
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Section */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-10">
             <Link 
               to="/" 
               className="flex items-center space-x-2 transition-all duration-300 hover:scale-105"
             >
-              <div className="w-24 h-12 lg:w-32 lg:h-12 rounded-xl flex items-center justify-center font-bold text-xl">
+              <div className="w-24 h-12 lg:w-32 lg:h-14 rounded-xl flex items-center justify-center font-bold text-xl">
                 <img src="/Logo/lukemanLogo.png" className=" object-cover" alt="" />
               </div>
             </Link>
