@@ -337,39 +337,94 @@ const BookingHistory = () => {
 
           {/* Booking Notifications Section */}
           {bookingNotifications.length > 0 && (
-            <Card className="mb-6 border-blue-500/20 bg-blue-500/5">
+            <Card className="mb-6 border-primary/20 bg-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-blue-500" />
+                  <Bell className="h-5 w-5 text-primary" />
                   Booking Notifications ({bookingNotifications.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {bookingNotifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="flex items-center justify-between p-3 bg-background border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-sm text-muted-foreground">{notification.message}</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedNotificationBookingId(
-                            notification.metadata?.booking_id || null
-                          );
-                          setShowNotificationModal(true);
-                        }}
-                      >
-                        View Details
-                      </Button>
+              <CardContent className="space-y-4">
+                {/* Unread Notifications */}
+                {bookingNotifications.filter(n => !n.is_read).length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-muted-foreground mb-2">Unread</h5>
+                    <div className="space-y-2">
+                      {bookingNotifications.filter(n => !n.is_read).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="flex items-center justify-between p-3 bg-accent/30 border border-l-4 border-l-primary rounded-lg hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{notification.title}</p>
+                              <p className="text-sm text-muted-foreground">{notification.message}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const bookingId = notification.metadata?.booking_id;
+                              if (bookingId) {
+                                setSelectedNotificationBookingId(bookingId);
+                                setShowNotificationModal(true);
+                              } else {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Error",
+                                  description: "Booking details not available for this notification.",
+                                });
+                              }
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                {/* Read Notifications */}
+                {bookingNotifications.filter(n => n.is_read).length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-muted-foreground mb-2">Read</h5>
+                    <div className="space-y-2">
+                      {bookingNotifications.filter(n => n.is_read).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="flex items-center justify-between p-3 bg-background border rounded-lg hover:bg-muted/50 transition-colors opacity-75"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{notification.title}</p>
+                            <p className="text-sm text-muted-foreground">{notification.message}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const bookingId = notification.metadata?.booking_id;
+                              if (bookingId) {
+                                setSelectedNotificationBookingId(bookingId);
+                                setShowNotificationModal(true);
+                              } else {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Error",
+                                  description: "Booking details not available for this notification.",
+                                });
+                              }
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
