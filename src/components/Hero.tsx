@@ -110,26 +110,19 @@ const Hero = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-white/20">
-            <div className="text-center lg:text-left">
+            <div className="text-center ">
               <div className="text-2xl lg:text-3xl font-bold text-white mb-1">50+</div>
               <div className="text-sm text-white/70">Premium Properties</div>
             </div>
-            <div className="text-center lg:text-left">
+            <div className="text-center">
               <div className="text-2xl lg:text-3xl font-bold text-white mb-1">4.9</div>
               <div className="text-sm text-white/70">Average Rating</div>
             </div>
-            <div className="text-center lg:text-left">
+            <div className="text-center">
               <div className="text-2xl lg:text-3xl font-bold text-white mb-1">10K+</div>
               <div className="text-sm text-white/70">Happy Guests</div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
         </div>
       </div>
     </section>
