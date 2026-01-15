@@ -106,16 +106,14 @@ export default function BookingNotificationModal({
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  if (!bookingData) {
-    return null;
-  }
-
-  const nights =
-    new Date(bookingData.check_out).getTime() -
-    new Date(bookingData.check_in).getTime();
+  const nights = bookingData
+    ? new Date(bookingData.check_out).getTime() -
+      new Date(bookingData.check_in).getTime()
+    : 0;
   const daysCount = Math.ceil(nights / (1000 * 60 * 60 * 24));
 
   const handleConfirmBooking = async () => {
+    if (!bookingData) return;
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -148,6 +146,7 @@ export default function BookingNotificationModal({
   };
 
   const handleDeclineBooking = async () => {
+    if (!bookingData) return;
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -202,6 +201,13 @@ export default function BookingNotificationModal({
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : !bookingData ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <p className="text-muted-foreground">Booking details not found.</p>
+            <Button variant="outline" className="mt-4" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">

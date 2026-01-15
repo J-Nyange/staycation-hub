@@ -49,7 +49,7 @@ export const NotificationDropdown = () => {
       </ScrollArea>
       <Separator />
       <div className="p-2">
-        <Link to="/notifications">
+        <Link to="/bookings">
           <Button variant="ghost" className="w-full" size="sm">
             View all notifications
           </Button>
