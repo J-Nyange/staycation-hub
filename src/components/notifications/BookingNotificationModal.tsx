@@ -10,7 +10,6 @@ import {
   Mail, 
   Phone, 
   FileText,
-  X,
   MessageSquare,
   CheckCircle,
   XCircle,
@@ -188,14 +187,6 @@ export default function BookingNotificationModal({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Booking Request Details</DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         {isLoading ? (
