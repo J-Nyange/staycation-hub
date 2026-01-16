@@ -119,7 +119,7 @@ export default function BookingNotificationModal({
         .from('bookings')
         .update({ 
           status: 'confirmed',
-          payment_status: 'paid_offline'
+          payment_status: 'awaiting_contact'
         })
         .eq('id', bookingData.id);
 
@@ -152,7 +152,7 @@ export default function BookingNotificationModal({
         .from('bookings')
         .update({ 
           status: 'cancelled',
-          payment_status: 'cancelled'
+          payment_status: 'pending'
         })
         .eq('id', bookingData.id);
 
@@ -177,9 +177,66 @@ export default function BookingNotificationModal({
     }
   };
 
-  const handleMessageGuest = () => {
-    onOpenChange(false);
-    navigate('/messages');
+  const handleMessageGuest = async () => {
+    if (!bookingData) return;
+    setIsUpdating(true);
+    
+    try {
+      // First, get the property owner and guest IDs from the booking
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .select('user_id, property_id, properties(owner_id)')
+        .eq('id', bookingData.id)
+        .single();
+      
+      if (bookingError || !booking) throw bookingError || new Error('Booking not found');
+      
+      const guestId = booking.user_id;
+      const ownerId = booking.properties?.owner_id;
+      const propertyId = booking.property_id;
+      
+      if (!ownerId) throw new Error('Property owner not found');
+      
+      // Check if conversation already exists for this booking
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('property_id', propertyId)
+        .eq('guest_id', guestId)
+        .eq('booking_id', bookingData.id)
+        .maybeSingle();
+      
+      let conversationId = existingConv?.id;
+      
+      // If no conversation exists, create one
+      if (!conversationId) {
+        const { data: newConv, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            property_id: propertyId,
+            guest_id: guestId,
+            owner_id: ownerId,
+            booking_id: bookingData.id,
+          })
+          .select('id')
+          .single();
+        
+        if (createError) throw createError;
+        conversationId = newConv?.id;
+      }
+      
+      // Navigate to messages with the conversation pre-selected
+      onOpenChange(false);
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to start conversation",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (

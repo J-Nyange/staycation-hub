@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,10 +10,20 @@ import { useConversations } from "@/hooks/useConversations";
 
 export default function Messages() {
   const { user } = useUser();
+  const [searchParams] = useSearchParams();
+  const conversationFromUrl = searchParams.get('conversation');
+  
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
-    null
+    conversationFromUrl
   );
   const { data: conversations = [] } = useConversations();
+
+  // Update selection when URL changes
+  useEffect(() => {
+    if (conversationFromUrl) {
+      setSelectedConversationId(conversationFromUrl);
+    }
+  }, [conversationFromUrl]);
 
   if (!user) {
     return <Navigate to="/" />;
