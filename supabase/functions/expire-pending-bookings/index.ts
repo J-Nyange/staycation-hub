@@ -11,11 +11,23 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // This function should only be called via Supabase cron or with service role key
+  const authHeader = req.headers.get('Authorization')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+  // Verify the request is from Supabase cron (using service role key)
+  if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
+    console.error('Unauthorized access attempt to expire-pending-bookings')
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: This function can only be called via Supabase cron' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // Find all expired pending bookings
     const { data: expiredBookings, error: fetchError } = await supabase
@@ -43,6 +55,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log(`Processing ${expiredCount} expired bookings`)
 
     // Process each expired booking
     const results = await Promise.all(
@@ -93,6 +107,8 @@ Deno.serve(async (req) => {
 
     const successCount = results.filter(r => r.success).length
     const failCount = results.filter(r => !r.success).length
+
+    console.log(`Expired ${successCount} bookings, ${failCount} failed`)
 
     return new Response(
       JSON.stringify({

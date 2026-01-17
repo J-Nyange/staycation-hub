@@ -34,8 +34,36 @@ const handler = async (req: Request): Promise<Response> => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
+  // Authentication check
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: Missing or invalid authorization header" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+
+  if (claimsError || !claimsData?.claims) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: Invalid token" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const userId = claimsData.claims.sub as string;
+
   try {
     const { booking_id, type }: BookingEmailRequest = await req.json();
+
+    if (!booking_id || !type) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: booking_id and type" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Fetch booking details with related data
     const { data: booking, error: bookingError } = await supabaseAdmin
@@ -51,6 +79,23 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (bookingError) throw bookingError;
+    if (!booking) {
+      return new Response(
+        JSON.stringify({ error: "Booking not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Authorization: User must be the guest or property owner
+    const isGuest = booking.user_id === userId;
+    const isOwner = booking.properties?.owner_id === userId;
+
+    if (!isGuest && !isOwner) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: You don't have permission to send emails for this booking" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get guest profile
     const { data: guestProfile } = await supabaseAdmin
@@ -211,6 +256,8 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
     }
+
+    console.log(`Booking email (${type}) sent successfully for booking ${booking_id} by user ${userId}`);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

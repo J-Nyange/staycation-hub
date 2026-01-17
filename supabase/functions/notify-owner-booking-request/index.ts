@@ -33,8 +33,36 @@ const handler = async (req: Request): Promise<Response> => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
+  // Authentication check
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: Missing or invalid authorization header" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+
+  if (claimsError || !claimsData?.claims) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: Invalid token" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const userId = claimsData.claims.sub as string;
+
   try {
     const { booking_id }: NotifyOwnerRequest = await req.json();
+
+    if (!booking_id) {
+      return new Response(
+        JSON.stringify({ error: "Missing required field: booking_id" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Fetch booking details with property and owner info
     const { data: booking, error: bookingError } = await supabaseAdmin
@@ -54,7 +82,18 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!booking) {
-      throw new Error("Booking not found");
+      return new Response(
+        JSON.stringify({ error: "Booking not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Authorization: Only the guest who created the booking can notify the owner
+    if (booking.user_id !== userId) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: You can only notify owners about your own bookings" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const property = booking.properties;
@@ -183,6 +222,8 @@ const handler = async (req: Request): Promise<Response> => {
         // Don't throw - email failure shouldn't fail the whole request
       }
     }
+
+    console.log(`Owner notification sent for booking ${booking_id} by user ${userId}`);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

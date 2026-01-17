@@ -30,8 +30,53 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
+  // This function is internal-only - verify it's called with service role key or from another edge function
+  const authHeader = req.headers.get("Authorization");
+  const internalSecret = req.headers.get("x-internal-secret");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  // Option 1: Called with service role key (from cron or internal systems)
+  const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+  
+  // Option 2: Called from another edge function with internal secret
+  const internalSecretEnv = Deno.env.get("INTERNAL_FUNCTION_SECRET");
+  const isInternalCall = internalSecretEnv && internalSecret === internalSecretEnv;
+
+  // Option 3: Called by authenticated user who can only send to themselves
+  let authenticatedUserId: string | null = null;
+  if (!isServiceRole && !isInternalCall && authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (!claimsError && claimsData?.claims) {
+      authenticatedUserId = claimsData.claims.sub as string;
+    }
+  }
+
+  // If none of the above, reject
+  if (!isServiceRole && !isInternalCall && !authenticatedUserId) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: This function requires authentication" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { user_id, title, message, action_url, notification_type } = await req.json();
+
+    // If called by authenticated user, they can only send notifications to themselves
+    if (authenticatedUserId && user_id !== authenticatedUserId) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: You can only send push notifications to yourself" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!user_id || !title || !message) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: user_id, title, message" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Sending push notification to user:", user_id);
 
