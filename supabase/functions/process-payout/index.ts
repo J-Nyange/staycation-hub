@@ -6,6 +6,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Sanitize error messages to prevent information leakage
+const sanitizeError = (error: any): string => {
+  const message = error?.message?.toLowerCase() || "";
+  
+  if (message.includes("not authenticated") || message.includes("unauthorized")) {
+    return "Authentication required";
+  }
+  if (message.includes("no pending earnings")) {
+    return "No pending earnings found for payout";
+  }
+  if (message.includes("validation")) {
+    return "Invalid input data";
+  }
+  
+  return "Unable to process payout. Please try again.";
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,16 +37,61 @@ const handler = async (req: Request): Promise<Response> => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseAdmin.auth.getUser(token);
     const user = data.user;
     
-    if (!user) throw new Error("User not authenticated");
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    const { earning_ids } = await req.json();
+    const body = await req.json();
+    const { earning_ids } = body;
 
-    // Get earnings details
+    // Input validation
+    if (!earning_ids || !Array.isArray(earning_ids)) {
+      return new Response(
+        JSON.stringify({ error: "earning_ids must be an array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (earning_ids.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "earning_ids cannot be empty" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (earning_ids.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Maximum 100 earnings per payout request" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate all earning IDs are valid UUIDs
+    for (const id of earning_ids) {
+      if (!id || typeof id !== 'string' || !UUID_REGEX.test(id)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid earning ID format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Get earnings details - only fetch earnings owned by this user
     const { data: earnings, error: earningsError } = await supabaseAdmin
       .from('property_earnings')
       .select('*, properties!inner(owner_id)')
@@ -34,10 +99,16 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('properties.owner_id', user.id)
       .eq('payout_status', 'pending');
 
-    if (earningsError) throw earningsError;
+    if (earningsError) {
+      console.error("Error fetching earnings:", earningsError.message);
+      throw new Error("Failed to fetch earnings");
+    }
 
     if (!earnings || earnings.length === 0) {
-      throw new Error("No pending earnings found");
+      return new Response(
+        JSON.stringify({ error: "No pending earnings found for payout" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const totalPayout = earnings.reduce((sum, e) => sum + parseFloat(e.net_amount), 0);
@@ -78,6 +149,8 @@ const handler = async (req: Request): Promise<Response> => {
       })
       .eq('user_id', user.id);
 
+    console.log(`Payout processed: ${totalPayout} for user ${user.id}`);
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -90,11 +163,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error processing payout:", error);
+    console.error("Error processing payout:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: sanitizeError(error) }),
       {
-        status: 500,
+        status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

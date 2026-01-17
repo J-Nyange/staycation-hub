@@ -28,6 +28,26 @@ const escapeHtml = (unsafe: string): string => {
     .replace(/'/g, '&#039;');
 };
 
+// Sanitize error messages
+const sanitizeError = (error: any): string => {
+  const message = error?.message?.toLowerCase() || "";
+  
+  if (message.includes("missing required")) {
+    return "Please fill in all required fields";
+  }
+  if (message.includes("too long")) {
+    return "One or more fields exceed the maximum length";
+  }
+  if (message.includes("invalid email")) {
+    return "Please enter a valid email address";
+  }
+  if (message.includes("failed to send")) {
+    return "Unable to send your message. Please try again later.";
+  }
+  
+  return "Failed to send message. Please try again.";
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Contact form function invoked");
 
@@ -40,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
     const data: ContactFormRequest = await req.json();
     
     // Validate required fields
-    if (!data.firstName || !data.lastName || !data.email || !data.message) {
+    if (!data.firstName?.trim() || !data.lastName?.trim() || !data.email?.trim() || !data.message?.trim()) {
       throw new Error("Missing required fields");
     }
 
@@ -115,6 +135,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error sending confirmation email");
     }
 
+    console.log("Contact form processed successfully");
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -132,10 +154,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in contact-form function:", error.message);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Failed to send message"
+        error: sanitizeError(error)
       }),
       {
-        status: 500,
+        status: 400,
         headers: { 
           "Content-Type": "application/json", 
           ...corsHeaders 

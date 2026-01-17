@@ -7,6 +7,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Sanitize error messages to prevent information leakage
+const sanitizeError = (error: any): string => {
+  const message = error?.message?.toLowerCase() || "";
+  
+  if (message.includes("unauthorized") || message.includes("permission")) {
+    return "You don't have permission to cancel this booking";
+  }
+  if (message.includes("not found")) {
+    return "Booking not found";
+  }
+  if (message.includes("refund")) {
+    return "Unable to process refund. Please contact support.";
+  }
+  
+  return "Unable to cancel booking. Please try again.";
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,15 +38,42 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const { bookingId, reason } = await req.json();
+    const body = await req.json();
+    const { bookingId, reason } = body;
+
+    // Input validation
+    if (!bookingId || !UUID_REGEX.test(bookingId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid booking ID format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate reason length
+    if (reason && (typeof reason !== 'string' || reason.length > 1000)) {
+      return new Response(
+        JSON.stringify({ error: "Reason must be less than 1000 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get booking details
     const { data: booking, error: bookingError } = await supabaseAdmin
@@ -38,14 +85,22 @@ serve(async (req) => {
       .eq("id", bookingId)
       .single();
 
-    if (bookingError) throw bookingError;
-    if (!booking) throw new Error("Booking not found");
+    if (bookingError || !booking) {
+      console.error("Error fetching booking:", bookingError?.message);
+      return new Response(
+        JSON.stringify({ error: "Booking not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Check authorization
     const isOwner = booking.property.owner_id === user.id;
     const isGuest = booking.user_id === user.id;
     if (!isOwner && !isGuest) {
-      throw new Error("Unauthorized to cancel this booking");
+      return new Response(
+        JSON.stringify({ error: "You don't have permission to cancel this booking" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Calculate refund based on cancellation policy and days until check-in
@@ -81,30 +136,38 @@ serve(async (req) => {
         status: "cancelled",
         cancelled_at: new Date().toISOString(),
         cancelled_by: user.id,
-        cancellation_reason: reason,
+        cancellation_reason: reason?.substring(0, 1000) || null,
         refund_amount: refundAmount,
         refund_status: refundAmount > 0 ? "pending" : "none",
       })
       .eq("id", bookingId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error("Error updating booking:", updateError.message);
+      throw new Error("Failed to cancel booking");
+    }
 
     // Process refund if amount > 0
     if (refundAmount > 0 && booking.stripe_payment_intent_id) {
-      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-        apiVersion: "2025-08-27.basil",
-      });
+      try {
+        const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+          apiVersion: "2025-08-27.basil",
+        });
 
-      await stripe.refunds.create({
-        payment_intent: booking.stripe_payment_intent_id,
-        amount: Math.round(refundAmount * 100),
-        reason: isOwner ? "requested_by_customer" : "requested_by_customer",
-      });
+        await stripe.refunds.create({
+          payment_intent: booking.stripe_payment_intent_id,
+          amount: Math.round(refundAmount * 100),
+          reason: "requested_by_customer",
+        });
 
-      await supabaseAdmin
-        .from("bookings")
-        .update({ refund_status: "processing" })
-        .eq("id", bookingId);
+        await supabaseAdmin
+          .from("bookings")
+          .update({ refund_status: "processing" })
+          .eq("id", bookingId);
+      } catch (refundError: any) {
+        console.error("Refund processing error:", refundError.message);
+        // Don't fail the cancellation, just log the refund error
+      }
     }
 
     // Create notification for the other party
@@ -118,6 +181,8 @@ serve(async (req) => {
       metadata: { booking_id: bookingId, refund_amount: refundAmount },
     });
 
+    console.log(`Booking ${bookingId} cancelled by user ${user.id}, refund: ${refundAmount}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -127,9 +192,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Cancel booking error:", error);
+    console.error("Cancel booking error:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: sanitizeError(error) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
     );
   }
