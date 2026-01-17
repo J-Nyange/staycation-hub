@@ -6,6 +6,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Paystack reference format (alphanumeric, typically 10-30 chars)
+const REFERENCE_REGEX = /^[a-zA-Z0-9_-]{5,100}$/;
+
+// Sanitize error messages to prevent information leakage
+const sanitizeError = (error: any): string => {
+  const message = error?.message?.toLowerCase() || "";
+  
+  if (message.includes("unauthorized") || message.includes("permission")) {
+    return "You don't have permission to verify this payment";
+  }
+  if (message.includes("not found")) {
+    return "Booking not found";
+  }
+  if (message.includes("already used")) {
+    return "This payment reference has already been used";
+  }
+  if (message.includes("not pending")) {
+    return "This booking is not awaiting payment";
+  }
+  if (message.includes("verification failed")) {
+    return "Payment verification failed";
+  }
+  if (message.includes("amount mismatch")) {
+    return "Payment amount does not match booking total";
+  }
+  
+  return "Unable to verify payment. Please try again or contact support.";
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -20,14 +52,10 @@ serve(async (req) => {
   try {
     // REQUIRE authentication
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error("No authorization header provided");
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized", verified: false }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
+        JSON.stringify({ error: "Authentication required", verified: false }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -35,20 +63,28 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
-      console.error("Auth error:", authError?.message);
       return new Response(
-        JSON.stringify({ error: "Unauthorized", verified: false }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        }
+        JSON.stringify({ error: "Authentication required", verified: false }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { reference, booking_id } = await req.json();
+    const body = await req.json();
+    const { reference, booking_id } = body;
 
-    if (!reference || !booking_id) {
-      throw new Error("Missing reference or booking_id");
+    // Input validation
+    if (!reference || !REFERENCE_REGEX.test(reference)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid payment reference format", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!booking_id || !UUID_REGEX.test(booking_id)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid booking ID format", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log(`Verifying Paystack payment: ${reference} for booking: ${booking_id} by user: ${user.id}`);
@@ -61,18 +97,27 @@ serve(async (req) => {
       .single();
 
     if (bookingFetchError || !booking) {
-      console.error("Booking not found:", bookingFetchError);
-      throw new Error("Booking not found");
+      console.error("Booking not found");
+      return new Response(
+        JSON.stringify({ error: "Booking not found", verified: false }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (booking.user_id !== user.id) {
-      console.error(`User ${user.id} attempted to verify booking owned by ${booking.user_id}`);
-      throw new Error("Unauthorized to verify this booking");
+      console.error(`User ${user.id} attempted to verify booking owned by another user`);
+      return new Response(
+        JSON.stringify({ error: "You don't have permission to verify this payment", verified: false }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (booking.status !== "pending") {
-      console.error(`Booking ${booking_id} is not pending, current status: ${booking.status}`);
-      throw new Error("Booking is not in pending state");
+      console.error(`Booking ${booking_id} is not pending`);
+      return new Response(
+        JSON.stringify({ error: "This booking is not awaiting payment", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Check if reference already used (prevent replay attacks)
@@ -83,14 +128,21 @@ serve(async (req) => {
       .single();
 
     if (existingPayment) {
-      console.error(`Payment reference ${reference} already used for booking ${existingPayment.booking_id}`);
-      throw new Error("Payment reference already used");
+      console.error(`Payment reference ${reference} already used`);
+      return new Response(
+        JSON.stringify({ error: "This payment reference has already been used", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Verify payment with Paystack
     const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
     if (!paystackSecretKey) {
-      throw new Error("Paystack secret key not configured");
+      console.error("Paystack secret key not configured");
+      return new Response(
+        JSON.stringify({ error: "Payment service configuration error", verified: false }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const verifyResponse = await fetch(
@@ -104,10 +156,13 @@ serve(async (req) => {
     );
 
     const verifyData = await verifyResponse.json();
-    console.log("Paystack verification response:", verifyData);
+    console.log("Paystack verification completed");
 
     if (!verifyData.status || verifyData.data?.status !== "success") {
-      throw new Error("Payment verification failed");
+      return new Response(
+        JSON.stringify({ error: "Payment verification failed", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const paymentData = verifyData.data;
@@ -116,7 +171,10 @@ serve(async (req) => {
     const expectedAmount = Math.round(booking.total_price * 100);
     if (paymentData.amount !== expectedAmount) {
       console.error(`Amount mismatch: expected ${expectedAmount} kobo, got ${paymentData.amount} kobo`);
-      throw new Error(`Payment amount mismatch: expected ${expectedAmount}, got ${paymentData.amount}`);
+      return new Response(
+        JSON.stringify({ error: "Payment amount does not match booking total", verified: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Update booking status
@@ -130,8 +188,8 @@ serve(async (req) => {
       .eq("id", booking_id);
 
     if (bookingError) {
-      console.error("Error updating booking:", bookingError);
-      throw bookingError;
+      console.error("Error updating booking");
+      throw new Error("Failed to update booking status");
     }
 
     // Create payment transaction record with metadata for audit
@@ -144,16 +202,10 @@ serve(async (req) => {
         currency: paymentData.currency?.toLowerCase() || "kes",
         status: "succeeded",
         payment_method: "paystack",
-        metadata: {
-          verified_by_user_id: user.id,
-          property_id: booking.property_id,
-          paystack_reference: reference,
-          verification_timestamp: new Date().toISOString(),
-        },
       });
 
     if (transactionError) {
-      console.error("Error creating transaction:", transactionError);
+      console.error("Error creating transaction record");
     }
 
     // Calculate commission
@@ -193,9 +245,9 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Paystack verification error:", error);
+    console.error("Paystack verification error:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message, verified: false }),
+      JSON.stringify({ error: sanitizeError(error), verified: false }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
