@@ -43,10 +43,16 @@ const TransferOwnershipModal = ({
     queryFn: async () => {
       if (!searchEmail || searchEmail.length < 3) return [];
       
+      // Escape SQL LIKE special characters to prevent injection
+      const escapedSearch = searchEmail
+        .replace(/\\/g, '\\\\')  // Escape backslashes first
+        .replace(/%/g, '\\%')    // Escape percent signs
+        .replace(/_/g, '\\_');   // Escape underscores
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, user_id, first_name, last_name, avatar_url')
-        .or(`first_name.ilike.%${searchEmail}%,last_name.ilike.%${searchEmail}%`)
+        .or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%`)
         .limit(5);
 
       if (error) throw error;
