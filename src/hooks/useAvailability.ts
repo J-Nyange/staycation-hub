@@ -9,11 +9,12 @@ export const useAvailability = (propertyId: string, checkIn?: Date, checkOut?: D
         return { isAvailable: true, conflictingBookings: [] };
       }
 
+      // Use public_booking_availability view which only exposes minimal data
+      // (property_id, check_in, check_out, status) - no PII
       const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select('id, check_in, check_out, status')
+        .from('public_booking_availability')
+        .select('check_in, check_out, status')
         .eq('property_id', propertyId)
-        .in('status', ['confirmed', 'pending'])
         .gte('check_out', checkIn.toISOString().split('T')[0])
         .lte('check_in', checkOut.toISOString().split('T')[0]);
 
@@ -38,11 +39,11 @@ export const usePropertyAvailability = (propertyId: string) => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
+      // Use public_booking_availability view which only exposes minimal data
       const { data: bookings, error } = await supabase
-        .from('bookings')
+        .from('public_booking_availability')
         .select('check_in, check_out, status')
         .eq('property_id', propertyId)
-        .in('status', ['confirmed', 'pending'])
         .gte('check_out', today); // Booking ends on or after today (check-out is the day guest leaves)
 
       if (error) {

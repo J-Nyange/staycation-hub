@@ -38,11 +38,11 @@ export const useSearch = (params: SearchParams) => {
       if (params.checkIn && params.checkOut && properties) {
         const availableProperties = await Promise.all(
           properties.map(async (property) => {
+            // Use public_booking_availability view - only exposes minimal data (no PII)
             const { data: bookings } = await supabase
-              .from('bookings')
+              .from('public_booking_availability')
               .select('check_in, check_out')
               .eq('property_id', property.id)
-              .in('status', ['confirmed', 'pending'])
               .gte('check_out', params.checkIn!.toISOString().split('T')[0])
               .lte('check_in', params.checkOut!.toISOString().split('T')[0]);
 

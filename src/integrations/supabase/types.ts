@@ -992,6 +992,35 @@ export type Database = {
       }
     }
     Views: {
+      public_booking_availability: {
+        Row: {
+          check_in: string | null
+          check_out: string | null
+          property_id: string | null
+          status: string | null
+        }
+        Insert: {
+          check_in?: string | null
+          check_out?: string | null
+          property_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          check_in?: string | null
+          check_out?: string | null
+          property_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_owner_profiles: {
         Row: {
           avatar_url: string | null
