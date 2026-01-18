@@ -18,6 +18,13 @@ export interface BookingNotificationData {
   accommodation_explanation?: string;
   status: string;
   payment_status: string;
+  // Role identification
+  owner_id?: string;
+  booking_user_id?: string;
+  // Owner contact info (for guest view)
+  owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
 }
 
 export const useBookingNotificationDetails = (bookingId: string | null) => {
@@ -28,7 +35,7 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
     queryFn: async () => {
       if (!bookingId) return null;
 
-      // Fetch booking with property details
+      // Fetch booking with property details including owner_id
       const { data: booking, error } = await supabase
         .from("bookings")
         .select(`
@@ -55,7 +62,8 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
             title,
             location,
             main_image,
-            description
+            description,
+            owner_id
           )
         `)
         .eq("id", bookingId)
@@ -68,6 +76,31 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
       const guestName = booking.guest_name || "Guest";
       const guestEmail = booking.guest_email || "No email available";
       const guestPhone = booking.guest_phone || undefined;
+
+      // Fetch owner profile if we have an owner_id
+      let ownerName: string | undefined;
+      let ownerEmail: string | undefined;
+      let ownerPhone: string | undefined;
+
+      const ownerId = booking.properties?.owner_id;
+      if (ownerId) {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, phone")
+          .eq("user_id", ownerId)
+          .single();
+
+        if (ownerProfile) {
+          const firstName = ownerProfile.first_name || "";
+          const lastName = ownerProfile.last_name || "";
+          ownerName = [firstName, lastName].filter(Boolean).join(" ") || "Property Owner";
+          ownerPhone = ownerProfile.phone || undefined;
+        }
+
+        // Try to get owner email from Clerk user metadata stored in profiles or use a fallback
+        // Since we can't directly query Clerk, we'll use the owner_id as a contact reference
+        ownerEmail = undefined; // Email not stored in profiles table
+      }
 
       const bookingData: BookingNotificationData = {
         id: booking.id,
@@ -85,6 +118,13 @@ export const useBookingNotificationDetails = (bookingId: string | null) => {
         accommodation_explanation: booking.accommodation_explanation || undefined,
         status: booking.status,
         payment_status: booking.payment_status,
+        // Role identification
+        owner_id: ownerId,
+        booking_user_id: booking.user_id,
+        // Owner contact info
+        owner_name: ownerName,
+        owner_email: ownerEmail,
+        owner_phone: ownerPhone,
       };
 
       return bookingData;
