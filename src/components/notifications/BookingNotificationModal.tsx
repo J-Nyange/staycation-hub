@@ -14,13 +14,15 @@ import {
   CheckCircle,
   XCircle,
   Utensils,
-  Accessibility
+  Accessibility,
+  Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useUser } from "@clerk/clerk-react";
 
 interface BookingData {
   id: string;
@@ -45,6 +47,13 @@ interface BookingData {
   dietary_requirements?: string;
   accessibility_needs?: string;
   additional_services?: string[];
+  // Role identification
+  owner_id?: string;
+  booking_user_id?: string;
+  // Owner contact info (for guest view)
+  owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
 }
 
 interface BookingNotificationModalProps {
@@ -104,6 +113,11 @@ export default function BookingNotificationModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
+  const { user } = useUser();
+
+  // Determine if current user is the property owner or the guest
+  const isOwner = user?.id === bookingData?.owner_id;
+  const isGuest = user?.id === bookingData?.booking_user_id;
 
   const nights = bookingData
     ? new Date(bookingData.check_out).getTime() -
@@ -243,7 +257,9 @@ export default function BookingNotificationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Booking Request Details</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {isOwner ? "Booking Request Details" : "Your Booking Details"}
+          </DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
@@ -290,72 +306,127 @@ export default function BookingNotificationModal({
               </CardContent>
             </Card>
 
-            {/* Guest Information with Contact Actions */}
-            <Card>
-              <CardContent className="pt-6">
-                <h4 className="font-semibold mb-4">Guest Information</h4>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium">{bookingData.guest_name}</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Contact Information - Different for Owner vs Guest */}
+            {isOwner ? (
+              /* Owner View: Show Guest Information */
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold mb-4">Guest Information</h4>
+                  <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
-                        Email
-                      </p>
-                      <a 
-                        href={`mailto:${bookingData.guest_email}`}
-                        className="font-medium text-sm text-primary hover:underline break-all"
-                      >
-                        {bookingData.guest_email}
-                      </a>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium">{bookingData.guest_name}</p>
                     </div>
-                    {bookingData.guest_phone && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Mail className="h-4 w-4" />
+                          Email
+                        </p>
+                        <a 
+                          href={`mailto:${bookingData.guest_email}`}
+                          className="font-medium text-sm text-primary hover:underline break-all"
+                        >
+                          {bookingData.guest_email}
+                        </a>
+                      </div>
+                      {bookingData.guest_phone && (
+                        <div>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-4 w-4" />
+                            Phone
+                          </p>
+                          <a 
+                            href={`tel:${bookingData.guest_phone}`}
+                            className="font-medium text-sm text-primary hover:underline"
+                          >
+                            {bookingData.guest_phone}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Quick Contact Actions for Owner */}
+                    <div className="flex gap-2 pt-2">
+                      {bookingData.guest_phone && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          asChild
+                        >
+                          <a href={`tel:${bookingData.guest_phone}`}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Guest
+                          </a>
+                        </Button>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        asChild
+                      >
+                        <a href={`mailto:${bookingData.guest_email}`}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Email Guest
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Guest View: Show Property Owner Contact */
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Home className="h-4 w-4" />
+                    Property Owner Contact
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Owner</p>
+                      <p className="font-medium">{bookingData.owner_name || "Property Owner"}</p>
+                    </div>
+                    {bookingData.owner_phone && (
                       <div>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Phone className="h-4 w-4" />
                           Phone
                         </p>
                         <a 
-                          href={`tel:${bookingData.guest_phone}`}
+                          href={`tel:${bookingData.owner_phone}`}
                           className="font-medium text-sm text-primary hover:underline"
                         >
-                          {bookingData.guest_phone}
+                          {bookingData.owner_phone}
                         </a>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Quick Contact Actions */}
-                  <div className="flex gap-2 pt-2">
-                    {bookingData.guest_phone && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        asChild
-                      >
-                        <a href={`tel:${bookingData.guest_phone}`}>
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call Guest
-                        </a>
-                      </Button>
+                    
+                    {/* Quick Contact Actions for Guest */}
+                    <div className="flex gap-2 pt-2">
+                      {bookingData.owner_phone && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          asChild
+                        >
+                          <a href={`tel:${bookingData.owner_phone}`}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Owner
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {!bookingData.owner_phone && (
+                      <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
+                        Use the message button below to contact the property owner about your booking.
+                      </p>
                     )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      asChild
-                    >
-                      <a href={`mailto:${bookingData.guest_email}`}>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email Guest
-                      </a>
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Booking Information */}
             <Card>
@@ -446,7 +517,9 @@ export default function BookingNotificationModal({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Status: {bookingData.payment_status === 'awaiting_contact' 
-                      ? 'Guest is waiting for you to contact them about payment' 
+                      ? (isOwner 
+                          ? 'Guest is waiting for you to contact them about payment' 
+                          : 'Awaiting property owner to contact you about payment arrangements')
                       : bookingData.payment_status}
                   </p>
                 </div>
@@ -490,9 +563,10 @@ export default function BookingNotificationModal({
               </Card>
             )}
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Different for Owner vs Guest */}
             <div className="space-y-3 pt-4">
-              {bookingData.payment_status === 'awaiting_contact' && (
+              {/* Owner-only: Confirm/Decline buttons */}
+              {isOwner && bookingData.payment_status === 'awaiting_contact' && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button 
                     onClick={handleConfirmBooking}
@@ -525,9 +599,10 @@ export default function BookingNotificationModal({
                 <Button 
                   className="flex-1"
                   onClick={handleMessageGuest}
+                  disabled={isUpdating}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Message Guest
+                  {isOwner ? "Message Guest" : "Message Owner"}
                 </Button>
               </div>
             </div>
