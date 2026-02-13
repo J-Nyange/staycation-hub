@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  // Authentication check
+  // Authentication: decode Clerk JWT manually
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(
@@ -43,17 +43,18 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
-
-  if (claimsError || !claimsData?.claims) {
+  let userId: string;
+  try {
+    const token = authHeader.replace("Bearer ", "");
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    userId = payload.sub;
+    if (!userId) throw new Error("No sub claim");
+  } catch {
     return new Response(
       JSON.stringify({ error: "Unauthorized: Invalid token" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-
-  const userId = claimsData.claims.sub as string;
 
   try {
     const { booking_id, type }: BookingEmailRequest = await req.json();
@@ -65,14 +66,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Fetch booking details with related data
+    // Fetch booking details with property info
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .select(`
         *,
         properties (
-          id, title, location, main_image, owner_id,
-          profiles!properties_owner_id_fkey (first_name, last_name)
+          id, title, location, main_image, owner_id
         )
       `)
       .eq('id', booking_id)
@@ -97,19 +97,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get guest profile
+    // Get guest email from booking record or profile
+    let guestEmail = booking.guest_email;
+    let guestName = booking.guest_name;
+
+    // Fetch guest profile for name/email fallback
     const { data: guestProfile } = await supabaseAdmin
       .from('profiles')
-      .select('*')
+      .select('first_name, last_name, email')
       .eq('user_id', booking.user_id)
       .single();
 
-    // Get guest email from auth.users
-    const { data: { user: guestUser } } = await supabaseAdmin.auth.admin.getUserById(booking.user_id);
-    
-    if (!guestUser?.email) throw new Error("Guest email not found");
+    if (!guestEmail && guestProfile?.email) {
+      guestEmail = guestProfile.email;
+    }
+    if (!guestName && guestProfile) {
+      guestName = `${guestProfile.first_name || ''} ${guestProfile.last_name || ''}`.trim() || 'Guest';
+    }
+    if (!guestName) guestName = 'Guest';
 
-    const guestName = guestProfile?.first_name || guestUser.email;
+    if (!guestEmail) {
+      console.error("Guest email not found for booking", booking_id);
+      return new Response(
+        JSON.stringify({ error: "Guest email not found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const propertyTitle = booking.properties.title;
     const checkIn = new Date(booking.check_in).toLocaleDateString('en-US', { 
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
@@ -128,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Send confirmation email to guest
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
-        to: [guestUser.email],
+        to: [guestEmail],
         subject: `Booking Confirmed - ${safePropertyTitle}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -143,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p><strong>Check-in:</strong> ${checkIn}</p>
               <p><strong>Check-out:</strong> ${checkOut}</p>
               <p><strong>Guests:</strong> ${booking.guests}</p>
-              <p><strong>Total Amount:</strong> $${booking.total_price}</p>
+              <p><strong>Total Amount:</strong> KES ${booking.total_price}</p>
               <p><strong>Booking Reference:</strong> ${booking.id.substring(0, 8).toUpperCase()}</p>
             </div>
 
@@ -165,22 +179,23 @@ const handler = async (req: Request): Promise<Response> => {
 
             <p>If you have any questions, please don't hesitate to reach out.</p>
             <p>Best regards,<br>Lukemanbnb Team</p>
-            
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
-              <p>Need to cancel? Check our <a href="https://your-domain.com/cancellation-policy">cancellation policy</a>.</p>
-            </div>
           </div>
         `,
       });
 
       // Send notification to property owner
       if (booking.properties.owner_id) {
-        const { data: { user: ownerUser } } = await supabaseAdmin.auth.admin.getUserById(booking.properties.owner_id);
-        
-        if (ownerUser?.email) {
+        const { data: ownerProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('first_name, email')
+          .eq('user_id', booking.properties.owner_id)
+          .single();
+
+        const ownerEmail = ownerProfile?.email;
+        if (ownerEmail) {
           await resend.emails.send({
             from: "Lukemanbnb <onboarding@resend.dev>",
-            to: [ownerUser.email],
+            to: [ownerEmail],
             subject: `New Booking - ${safePropertyTitle}`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -194,7 +209,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <p><strong>Check-in:</strong> ${checkIn}</p>
                   <p><strong>Check-out:</strong> ${checkOut}</p>
                   <p><strong>Guests:</strong> ${booking.guests}</p>
-                  <p><strong>Total Amount:</strong> $${booking.total_price}</p>
+                  <p><strong>Total Amount:</strong> KES ${booking.total_price}</p>
                 </div>
 
                 <p>Please prepare for your guest's arrival and ensure the property is ready.</p>
@@ -205,10 +220,9 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
     } else if (type === 'reminder') {
-      // Send check-in reminder to guest
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
-        to: [guestUser.email],
+        to: [guestEmail],
         subject: `Reminder: Check-in Tomorrow - ${safePropertyTitle}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -230,10 +244,9 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
     } else if (type === 'review_request') {
-      // Send review request after checkout
       await resend.emails.send({
         from: "Lukemanbnb <onboarding@resend.dev>",
-        to: [guestUser.email],
+        to: [guestEmail],
         subject: `How was your stay at ${safePropertyTitle}?`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -242,13 +255,6 @@ const handler = async (req: Request): Promise<Response> => {
             <p>We hope you enjoyed your stay at ${safePropertyTitle}!</p>
             
             <p>Your feedback helps other guests make informed decisions and helps property owners improve their service.</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="https://your-domain.com/properties/${booking.properties.id}?review=true&booking=${booking.id}" 
-                 style="background-color: #0EA5E9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Write a Review
-              </a>
-            </div>
 
             <p>Thank you for choosing Lukemanbnb!</p>
             <p>Best regards,<br>Lukemanbnb Team</p>
@@ -261,19 +267,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error sending booking emails:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

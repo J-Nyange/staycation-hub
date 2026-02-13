@@ -133,7 +133,7 @@ export default function BookingNotificationModal({
         .from('bookings')
         .update({ 
           status: 'confirmed',
-          payment_status: 'awaiting_contact'
+          payment_status: 'paid_offline'
         })
         .eq('id', bookingData.id);
 

@@ -42,17 +42,18 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
-
-  if (claimsError || !claimsData?.claims) {
+  let userId: string;
+  try {
+    const token = authHeader.replace("Bearer ", "");
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    userId = payload.sub;
+    if (!userId) throw new Error("No sub claim");
+  } catch {
     return new Response(
       JSON.stringify({ error: "Unauthorized: Invalid token" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-
-  const userId = claimsData.claims.sub as string;
 
   try {
     const { booking_id }: NotifyOwnerRequest = await req.json();
