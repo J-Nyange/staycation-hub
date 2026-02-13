@@ -34,30 +34,45 @@ export default function OwnerBookings() {
   const bookingNotifications = notifications?.filter((n) => n.type === "booking") || [];
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ["owner-bookings"],
+    queryKey: ["owner-bookings", user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from("bookings")
         .select(`
           *,
-          property:properties!inner(id, title, owner_id),
-          profile:profiles!bookings_user_id_fkey(first_name, last_name, avatar_url, phone)
+          property:properties!inner(id, title, owner_id)
         `)
         .eq("property.owner_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Fetch guest profiles separately (no FK from bookings.user_id to profiles)
+      const userIds = [...new Set((data || []).map((b: any) => b.user_id))];
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, first_name, last_name, avatar_url, phone")
+          .in("user_id", userIds);
+        if (profiles) {
+          profilesMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
+        }
+      }
+
+      return (data || []).map((b: any) => ({
+        ...b,
+        profile: profilesMap[b.user_id] || null,
+      }));
     },
+    enabled: !!user,
   });
 
   const { data: modifications } = useQuery({
-    queryKey: ["modifications"],
+    queryKey: ["modifications", user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
@@ -66,8 +81,7 @@ export default function OwnerBookings() {
           *,
           booking:bookings!inner(
             *,
-            property:properties!inner(owner_id),
-            profile:profiles!bookings_user_id_fkey(first_name, last_name, phone)
+            property:properties!inner(owner_id)
           )
         `)
         .eq("booking.property.owner_id", user.id)
@@ -75,8 +89,29 @@ export default function OwnerBookings() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Fetch guest profiles for modifications
+      const userIds = [...new Set((data || []).map((m: any) => m.booking?.user_id).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, first_name, last_name, phone")
+          .in("user_id", userIds);
+        if (profiles) {
+          profilesMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
+        }
+      }
+
+      return (data || []).map((m: any) => ({
+        ...m,
+        booking: {
+          ...m.booking,
+          profile: profilesMap[m.booking?.user_id] || null,
+        },
+      }));
     },
+    enabled: !!user,
   });
 
   // Filter bookings by status
@@ -131,7 +166,7 @@ export default function OwnerBookings() {
         .from('bookings')
         .update({ 
           status: 'cancelled',
-          payment_status: 'cancelled'
+          payment_status: 'failed'
         })
         .eq('id', bookingId);
 

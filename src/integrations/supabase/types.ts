@@ -496,6 +496,7 @@ export type Database = {
           bio: string | null
           created_at: string
           date_of_birth: string | null
+          email: string | null
           first_name: string | null
           id: string
           is_property_owner: boolean | null
@@ -519,6 +520,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
+          email?: string | null
           first_name?: string | null
           id?: string
           is_property_owner?: boolean | null
@@ -542,6 +544,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
+          email?: string | null
           first_name?: string | null
           id?: string
           is_property_owner?: boolean | null

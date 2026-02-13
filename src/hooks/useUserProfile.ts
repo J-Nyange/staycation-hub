@@ -43,6 +43,7 @@ export const useUserProfile = () => {
             user_id: user.id,
             first_name: user.firstName || null,
             last_name: user.lastName || null,
+            email: user.primaryEmailAddress?.emailAddress || null,
           })
           .select()
           .single();
