@@ -167,7 +167,7 @@ export default function LiveChatWidget() {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <ScrollArea ref={scrollRef} className="flex-1 p-4 h-[380px]">
+              <ScrollArea className="flex-1 p-4 h-[380px]">
                 {loadingConversation || loadingMessages ? (
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -179,7 +179,7 @@ export default function LiveChatWidget() {
                     <p className="text-sm mt-1">Send us a message and we'll respond shortly.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div ref={scrollRef} className="space-y-4">
                     {messages.map((msg) => (
                       <div
                         key={msg.id}

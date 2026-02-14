@@ -99,7 +99,7 @@ const FeaturedProperties = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {isLoading ? (
             // Loading skeleton
-            Array.from({ length: 6 }).map((_, index) => (
+            Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="bg-card rounded-2xl overflow-hidden">
                 <Skeleton className="w-full h-64" />
                 <div className="p-6">
