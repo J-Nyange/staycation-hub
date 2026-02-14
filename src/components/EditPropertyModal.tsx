@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 import { propertySchema, validateForm } from "@/lib/validations";
+import { geocodeAddress } from "@/utils/geocoding";
 
 interface EditPropertyModalProps {
   open: boolean;
@@ -117,6 +118,17 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
     setIsLoading(true);
 
     try {
+      // Auto-geocode if location changed
+      let latitude: number | null = property.latitude ?? null;
+      let longitude: number | null = property.longitude ?? null;
+      if (validatedData.location !== property.location || (!latitude && !longitude)) {
+        const geoResult = await geocodeAddress(validatedData.location);
+        if (geoResult) {
+          latitude = geoResult.lat;
+          longitude = geoResult.lon;
+        }
+      }
+
       const { error } = await supabase
         .from('properties')
         .update({
@@ -132,6 +144,8 @@ const EditPropertyModal = ({ open, onOpenChange, property, onSuccess }: EditProp
           images: validatedData.images,
           amenities: validatedData.amenities || [],
           is_active: validatedData.is_active,
+          latitude,
+          longitude,
         })
         .eq('id', property.id);
 
