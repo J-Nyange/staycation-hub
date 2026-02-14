@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { propertySchema, validateForm } from "@/lib/validations";
+import { geocodeAddress } from "@/utils/geocoding";
 
 interface AddPropertyModalProps {
   open: boolean;
@@ -94,6 +95,15 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
     setIsLoading(true);
 
     try {
+      // Auto-geocode location
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      const geoResult = await geocodeAddress(validatedData.location);
+      if (geoResult) {
+        latitude = geoResult.lat;
+        longitude = geoResult.lon;
+      }
+
       const { error } = await supabase
         .from('properties')
         .insert({
@@ -110,6 +120,8 @@ const AddPropertyModal = ({ open, onOpenChange }: AddPropertyModalProps) => {
           amenities: validatedData.amenities || [],
           owner_id: user.id,
           is_active: true,
+          latitude,
+          longitude,
         });
 
       if (error) throw error;

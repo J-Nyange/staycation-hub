@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -6,6 +6,8 @@ import SEO from '@/components/SEO';
 import PropertyMap from '@/components/map/PropertyMap';
 import { useProperties } from '@/hooks/useProperties';
 import { Card, CardContent } from '@/components/ui/card';
+import { geocodeAddress } from '@/utils/geocoding';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +67,38 @@ const MapView = () => {
       { name: 'Map View', url: '/map' },
     ],
   });
+
+  // Auto-geocode properties missing coordinates (one-time)
+  const geocodedRef = useRef(false);
+  useEffect(() => {
+    if (!properties || geocodedRef.current) return;
+    const toGeocode = properties.filter(
+      (p) => !p.latitude && !p.longitude && p.location
+    );
+    if (toGeocode.length === 0) return;
+    geocodedRef.current = true;
+
+    const geocodeAll = async () => {
+      for (const prop of toGeocode) {
+        try {
+          const result = await geocodeAddress(prop.location);
+          if (result) {
+            await supabase
+              .from('properties')
+              .update({ latitude: result.lat, longitude: result.lon })
+              .eq('id', prop.id);
+          }
+          // Respect Nominatim rate limit (1 req/sec)
+          await new Promise((r) => setTimeout(r, 1100));
+        } catch (e) {
+          console.error('Geocode failed for', prop.location, e);
+        }
+      }
+      // Refetch after geocoding
+      window.location.reload();
+    };
+    geocodeAll();
+  }, [properties]);
 
   const propertiesWithCoordinates = filteredProperties.filter(
     (p) => p.latitude && p.longitude
@@ -196,7 +230,7 @@ const MapView = () => {
             </div>
           ) : (
             // Map View
-            <div className="flex-1 relative">
+            <div className="flex-1 relative" style={{ minHeight: 'calc(100vh - 200px)' }}>
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center space-y-4">
