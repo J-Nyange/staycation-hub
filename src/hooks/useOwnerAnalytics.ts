@@ -59,8 +59,11 @@ export const useOwnerAnalytics = (timeRange: TimeRange = "30days") => {
     queryFn: async () => {
       if (!user) return [];
 
+      const { start, end } = getDateRange(timeRange);
       const { data, error } = await supabase.rpc("get_owner_analytics", {
         target_owner_id: user.id,
+        start_date: start,
+        end_date: end,
       });
 
       if (error) throw error;

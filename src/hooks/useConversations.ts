@@ -48,6 +48,23 @@ export const useConversations = () => {
 
       if (error) throw error;
 
+      // Batch fetch all other user profiles in one query
+      const otherUserIds = (conversations || []).map((conv) =>
+        conv.guest_id === user.id ? conv.owner_id : conv.guest_id
+      );
+      const uniqueUserIds = [...new Set(otherUserIds)];
+
+      const { data: profiles } = uniqueUserIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("user_id, first_name, last_name")
+            .in("user_id", uniqueUserIds)
+        : { data: [] };
+
+      const profileMap = new Map(
+        (profiles || []).map((p) => [p.user_id, p])
+      );
+
       // Fetch last message and unread count for each conversation
       const conversationsWithDetails = await Promise.all(
         (conversations || []).map(async (conv) => {
@@ -68,13 +85,8 @@ export const useConversations = () => {
             .eq("is_read", false)
             .neq("sender_id", user.id);
 
-          // Get other user profile
           const otherUserId = conv.guest_id === user.id ? conv.owner_id : conv.guest_id;
-          const { data: otherUserProfile } = await supabase
-            .from("profiles")
-            .select("first_name, last_name")
-            .eq("user_id", otherUserId)
-            .single();
+          const otherUserProfile = profileMap.get(otherUserId);
 
           return {
             ...conv,

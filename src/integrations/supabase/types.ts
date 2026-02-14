@@ -1050,23 +1050,45 @@ export type Database = {
       }
     }
     Functions: {
-      get_owner_analytics: {
-        Args: { target_owner_id: string }
-        Returns: {
-          average_rating: number
-          avg_booking_value: number
-          avg_stay_duration: number
-          booking_success_rate: number
-          cancelled_bookings: number
-          confirmed_bookings: number
-          pending_bookings: number
-          property_id: string
-          property_title: string
-          review_count: number
-          total_bookings: number
-          total_revenue: number
-        }[]
-      }
+      get_owner_analytics:
+        | {
+            Args: { target_owner_id: string }
+            Returns: {
+              average_rating: number
+              avg_booking_value: number
+              avg_stay_duration: number
+              booking_success_rate: number
+              cancelled_bookings: number
+              confirmed_bookings: number
+              pending_bookings: number
+              property_id: string
+              property_title: string
+              review_count: number
+              total_bookings: number
+              total_revenue: number
+            }[]
+          }
+        | {
+            Args: {
+              end_date?: string
+              start_date?: string
+              target_owner_id: string
+            }
+            Returns: {
+              average_rating: number
+              avg_booking_value: number
+              avg_stay_duration: number
+              booking_success_rate: number
+              cancelled_bookings: number
+              confirmed_bookings: number
+              pending_bookings: number
+              property_id: string
+              property_title: string
+              review_count: number
+              total_bookings: number
+              total_revenue: number
+            }[]
+          }
       get_revenue_by_month: {
         Args: { end_date: string; owner_text: string; start_date: string }
         Returns: {

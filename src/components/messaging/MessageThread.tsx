@@ -55,8 +55,8 @@ export const MessageThread = ({
           <h3 className="font-semibold">{propertyTitle}</h3>
         </div>
       )}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-4">
+        <div ref={scrollRef} className="space-y-4">
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
