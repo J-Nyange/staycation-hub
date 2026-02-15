@@ -1,59 +1,59 @@
 
 
-# Fix Map View: Two Root Causes Identified
+# Fix: Geocode Properties Via Edge Function
 
-## Problem Summary
+## Problem
 
-The Map View page shows no map because of **two independent issues**:
+All 23 properties have `null` coordinates. The current client-side geocoding in `MapView.tsx` fails silently because:
 
-1. **Zero-height map container** -- Leaflet requires an explicit pixel height. The current layout uses CSS `flex-1` and `h-full` all the way down, but the flex parent chain never establishes a concrete height, so Leaflet renders at 0px.
+- The Supabase client uses the anon key (or a non-owner Clerk token)
+- RLS policies only allow property **owners** to update their own properties
+- So `supabase.from('properties').update(...)` is rejected for every property
 
-2. **No properties have coordinates** -- All 23 properties in the database have `latitude: null` and `longitude: null`. Even if the map rendered, there would be no markers.
+The `AddPropertyModal` and `EditPropertyModal` geocoding works correctly because the owner is authenticated when creating/editing their own property. But the **backfill** for existing properties needs elevated permissions.
 
----
+## Solution
 
-## Fix Plan
+Create a small edge function (`geocode-properties`) that runs with the service role key (bypasses RLS) to batch-geocode all properties missing coordinates. Then call it once from MapView instead of trying client-side updates.
 
-### Step 1: Fix Map Container Height
+### Step 1: Create Edge Function `geocode-properties`
 
-**File: `src/pages/MapView.tsx`**
+**File: `supabase/functions/geocode-properties/index.ts`**
 
-Change the map wrapper from `flex-1 relative` (no height) to use `calc()` for an explicit height that fills the viewport minus the navbar and search bar:
+- Accepts a POST request (no auth required since it only fills missing data)
+- Queries properties where `latitude IS NULL AND longitude IS NULL AND location IS NOT NULL`
+- For each, calls Nominatim geocoding API with 1.1s delay between requests
+- Updates the property row using the service role client (bypasses RLS)
+- Returns a summary of how many were geocoded
 
-```text
-Before:  <div className="flex-1 relative">
-After:   <div className="flex-1 relative" style={{ minHeight: 'calc(100vh - 200px)' }}>
+### Step 2: Simplify `MapView.tsx` Backfill
+
+Replace the current client-side geocoding `useEffect` with a single edge function call:
+
+```
+useEffect(() => {
+  if (!properties || geocodedRef.current) return;
+  const missing = properties.filter(p => !p.latitude && !p.longitude && p.location);
+  if (missing.length === 0) return;
+  geocodedRef.current = true;
+
+  supabase.functions.invoke('geocode-properties').then(() => {
+    // Refetch properties after geocoding
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+  });
+}, [properties]);
 ```
 
-This ensures Leaflet always gets a real pixel height to render into.
+This avoids the `window.location.reload()` and instead uses React Query's cache invalidation for a smoother experience.
 
-### Step 2: Auto-Geocode Properties That Have No Coordinates
+### Step 3: Keep AddPropertyModal/EditPropertyModal As-Is
 
-**File: `src/pages/MapView.tsx`**
-
-Add a one-time effect that geocodes properties missing coordinates using the existing `geocodeAddress()` utility (OpenStreetMap Nominatim -- free, no API key). When the page loads:
-
-- Filter properties where `latitude` and `longitude` are both null but `location` text exists
-- Geocode each location string (with a small delay between calls to respect Nominatim rate limits)
-- Update the database with the resolved coordinates
-
-This runs once and permanently populates the coordinates so the map works going forward.
-
-### Step 3: Also Geocode on Property Creation/Edit
-
-**File: `src/components/AddPropertyModal.tsx`** and **`src/components/EditPropertyModal.tsx`**
-
-When a property is created or edited, automatically geocode the `location` field and save latitude/longitude. This prevents future properties from having null coordinates.
+The existing client-side geocoding in these modals works correctly because the authenticated owner has RLS permission to update their own properties. No changes needed.
 
 ---
 
-## Technical Details
+## Files to create/modify:
 
-### Files to modify:
-1. **`src/pages/MapView.tsx`** -- Fix container height + add geocoding effect
-2. **`src/components/AddPropertyModal.tsx`** -- Auto-geocode on property creation
-3. **`src/components/EditPropertyModal.tsx`** -- Auto-geocode on property edit
-
-### Why not remove the Map View?
-The Map View is a valuable feature for a property rental site -- it lets users visually browse properties by location. The fix is straightforward: give the map a real height and populate the missing coordinates. Once fixed, it will show all 23 properties on an interactive map with markers, popups, and clustering.
+1. **`supabase/functions/geocode-properties/index.ts`** (new) -- Edge function for batch geocoding with service role
+2. **`src/pages/MapView.tsx`** -- Replace client-side geocoding with edge function call, remove `window.location.reload()`
 
