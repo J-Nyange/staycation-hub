@@ -1,59 +1,110 @@
 
 
-# Fix: Geocode Properties Via Edge Function
+# Plan: Remove Map View, Add Hero Images, Add Contact Page Map
 
-## Problem
+## 1. Remove Map View Tab and Page
 
-All 23 properties have `null` coordinates. The current client-side geocoding in `MapView.tsx` fails silently because:
+**Files to modify:**
+- `src/components/Navbar.tsx` -- Remove the `{ name: "Map View", href: "/map" }` entry from the `navigation` array
+- `src/App.tsx` -- Remove the `MapView` lazy import and the `<Route path="/map" ...>` route
 
-- The Supabase client uses the anon key (or a non-owner Clerk token)
-- RLS policies only allow property **owners** to update their own properties
-- So `supabase.from('properties').update(...)` is rejected for every property
+**Files to delete:**
+- `src/pages/MapView.tsx`
+- `src/components/map/PropertyMap.tsx`
+- `src/components/map/PropertyMarker.tsx`
+- `src/components/map/MapControls.tsx`
 
-The `AddPropertyModal` and `EditPropertyModal` geocoding works correctly because the owner is authenticated when creating/editing their own property. But the **backfill** for existing properties needs elevated permissions.
-
-## Solution
-
-Create a small edge function (`geocode-properties`) that runs with the service role key (bypasses RLS) to batch-geocode all properties missing coordinates. Then call it once from MapView instead of trying client-side updates.
-
-### Step 1: Create Edge Function `geocode-properties`
-
-**File: `supabase/functions/geocode-properties/index.ts`**
-
-- Accepts a POST request (no auth required since it only fills missing data)
-- Queries properties where `latitude IS NULL AND longitude IS NULL AND location IS NOT NULL`
-- For each, calls Nominatim geocoding API with 1.1s delay between requests
-- Updates the property row using the service role client (bypasses RLS)
-- Returns a summary of how many were geocoded
-
-### Step 2: Simplify `MapView.tsx` Backfill
-
-Replace the current client-side geocoding `useEffect` with a single edge function call:
-
-```
-useEffect(() => {
-  if (!properties || geocodedRef.current) return;
-  const missing = properties.filter(p => !p.latitude && !p.longitude && p.location);
-  if (missing.length === 0) return;
-  geocodedRef.current = true;
-
-  supabase.functions.invoke('geocode-properties').then(() => {
-    // Refetch properties after geocoding
-    queryClient.invalidateQueries({ queryKey: ['properties'] });
-  });
-}, [properties]);
-```
-
-This avoids the `window.location.reload()` and instead uses React Query's cache invalidation for a smoother experience.
-
-### Step 3: Keep AddPropertyModal/EditPropertyModal As-Is
-
-The existing client-side geocoding in these modals works correctly because the authenticated owner has RLS permission to update their own properties. No changes needed.
+The edge function `geocode-properties` and the geocoding utils will be kept since they are still used by AddPropertyModal and EditPropertyModal.
 
 ---
 
-## Files to create/modify:
+## 2. Add Hero Background Images to All Pages
 
-1. **`supabase/functions/geocode-properties/index.ts`** (new) -- Edge function for batch geocoding with service role
-2. **`src/pages/MapView.tsx`** -- Replace client-side geocoding with edge function call, remove `window.location.reload()`
+Each page currently has a plain gradient hero section. These will be converted to use a full-width background image with a dark overlay (like the homepage Hero component), with white text on top.
+
+Since the project already has 3 images in `src/assets/`, they will be matched to the most relevant pages. For pages without a matching local image, high-quality Unsplash URLs will be used (already used elsewhere in the project, e.g., About page).
+
+**Image assignments:**
+| Page | Image | Rationale |
+|------|-------|-----------|
+| Airbnb | `src/assets/airbnb-interior.jpg` | Local asset, matches apartment theme |
+| Villas | `src/assets/hero-villa.jpg` | Local asset, matches luxury villa theme |
+| Homestays | `src/assets/homestay-cottage.jpg` | Local asset, matches homestay theme |
+| Blog | Unsplash travel/beach photo | Travel stories theme |
+| About | Unsplash Kenya coastline photo | Company/brand story |
+| Contact | Unsplash customer service / coastal office photo | Support/contact theme |
+
+**Pattern for each hero section** (matching the homepage Hero style):
+
+```text
+<section className="relative py-24 lg:py-32 overflow-hidden">
+  <div className="absolute inset-0 z-0">
+    <img src={heroImage} alt="..." className="w-full h-full object-cover" />
+    <div className="absolute inset-0 bg-black/50" />
+  </div>
+  <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+    <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
+      ...
+      <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        ...
+      </span>
+    </h1>
+    <p className="text-lg text-white/90 max-w-2xl mx-auto">...</p>
+    <!-- badges/tags also updated to white text -->
+  </div>
+</section>
+```
+
+**Files to modify:**
+- `src/pages/Airbnb.tsx`
+- `src/pages/Villas.tsx`
+- `src/pages/Homestays.tsx`
+- `src/pages/Blog.tsx`
+- `src/pages/About.tsx`
+- `src/pages/Contacts.tsx`
+
+---
+
+## 3. Add Real Leaflet Map to Contact Page
+
+Replace the "Interactive Map Coming Soon" placeholder in `src/pages/Contacts.tsx` with a real Leaflet map pinned to coordinates **-3.3803987215311975, 38.57530888460797**.
+
+The project already has `react-leaflet`, `leaflet`, and `@types/leaflet` installed, plus Leaflet CSS is already imported in the map components. The contact map will be a simple, self-contained usage:
+
+```text
+<MapContainer
+  center={[-3.3803987215311975, 38.57530888460797]}
+  zoom={15}
+  className="h-64 w-full rounded-2xl z-0"
+  scrollWheelZoom={false}
+>
+  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+  <Marker position={[-3.3803987215311975, 38.57530888460797]}>
+    <Popup>Lukemanbnb - Nyali Beach, Mombasa</Popup>
+  </Marker>
+</MapContainer>
+```
+
+A Leaflet default icon fix (already known pattern from the codebase) will be included to ensure the marker pin renders correctly.
+
+**File to modify:** `src/pages/Contacts.tsx`
+
+---
+
+## Summary of All Changes
+
+| File | Action |
+|------|--------|
+| `src/components/Navbar.tsx` | Remove "Map View" from navigation |
+| `src/App.tsx` | Remove MapView route and import |
+| `src/pages/MapView.tsx` | Delete |
+| `src/components/map/PropertyMap.tsx` | Delete |
+| `src/components/map/PropertyMarker.tsx` | Delete |
+| `src/components/map/MapControls.tsx` | Delete |
+| `src/pages/Airbnb.tsx` | Add hero background image |
+| `src/pages/Villas.tsx` | Add hero background image |
+| `src/pages/Homestays.tsx` | Add hero background image |
+| `src/pages/Blog.tsx` | Add hero background image |
+| `src/pages/About.tsx` | Add hero background image |
+| `src/pages/Contacts.tsx` | Add hero background image + replace map placeholder with real Leaflet map |
 
