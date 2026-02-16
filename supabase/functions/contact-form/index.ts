@@ -98,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to property owner
     const ownerEmailResponse = await resend.emails.send({
       from: "Lukemanbnb Contact <onboarding@resend.dev>",
-      to: ["vilahorizon04@gmail.com"], // Owner's email
+      to: ["info@lukemanbnb.com"], // Owner's email
       subject: `New Contact Form: ${safeSubject}`,
       html: `
         <h2>New Contact Form Submission</h2>

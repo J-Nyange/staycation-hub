@@ -57,7 +57,7 @@ export default function TermsOfService() {
             <p>We reserve the right to modify these terms at any time. Continued use of the platform after changes constitutes acceptance of the new terms.</p>
 
             <h2>11. Contact Information</h2>
-            <p>For questions about these Terms of Service, please contact us at vilahorizon04@gmail.com</p>
+            <p>For questions about these Terms of Service, please contact us at <strong>info@lukemanbnb.com</strong></p>
           </CardContent>
         </Card>
       </main>
