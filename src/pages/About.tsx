@@ -26,15 +26,19 @@ const About = () => {
       <Navbar />
       <main>
         {/* Hero Section */}
-        <section className="py-16 lg:py-24 bg-gradient-to-b from-primary/5 to-background">
-          <div className="container mx-auto px-4 lg:px-8 text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+        <section className="relative py-24 lg:py-32 overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1920&q=80" alt="Kenya coastline" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50" />
+          </div>
+          <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
               About
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {" "}Lukemanbnb
               </span>
             </h1>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-white/90 max-w-3xl mx-auto">
               We're passionate about connecting travelers with Kenya's most beautiful coastal destinations through authentic, luxurious accommodations.
             </p>
           </div>
