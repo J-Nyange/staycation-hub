@@ -7,6 +7,7 @@ import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import FilterSort from "@/components/FilterSort";
 import { generateBreadcrumbSchema } from "@/lib/structuredData";
+import villaHero from "@/assets/hero-villa.jpg";
 
 const Villas = () => {
   const { data: villaProperties = [], isLoading, error } = useProperties('villa');
@@ -48,26 +49,30 @@ const Villas = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="py-16 lg:py-24 bg-gradient-to-br from-accent/10 via-background to-primary/10">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+      <section className="relative py-24 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src={villaHero} alt="Luxury villa" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+          <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
             Luxury 
-            <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {" "}Villas
             </span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-white/90 max-w-2xl mx-auto mb-8">
             Exclusive beachfront villas with private pools and premium amenities. 
             Perfect for special occasions and luxury getaways.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="bg-accent/10 text-accent-foreground px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Private Pool
             </span>
-            <span className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Beachfront Access
             </span>
-            <span className="bg-secondary/10 text-secondary px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Concierge Service
             </span>
           </div>

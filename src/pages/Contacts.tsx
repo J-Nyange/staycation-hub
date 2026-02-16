@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,6 +11,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet default icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+const LUKEMANBNB_COORDS: [number, number] = [-3.3803987215311975, 38.57530888460797];
 
 const contactFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name must be less than 50 characters"),
@@ -69,15 +82,19 @@ const Contacts = () => {
       <Navbar />
       <main>
         {/* Hero Section */}
-        <section className="py-16 lg:py-24 bg-gradient-to-b from-primary/5 to-background">
-          <div className="container mx-auto px-4 lg:px-8 text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+        <section className="relative py-24 lg:py-32 overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=1920&q=80" alt="Contact us" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50" />
+          </div>
+          <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
               Contact
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {" "}Us
               </span>
             </h1>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-white/90 max-w-3xl mx-auto">
               Have questions about our properties or need assistance with your booking? We're here to help make your coastal getaway perfect.
             </p>
           </div>
@@ -144,12 +161,22 @@ const Contacts = () => {
                   </div>
                 </div>
 
-                {/* Map Placeholder */}
-                <div className="mt-8 h-64 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-primary mx-auto mb-2" />
-                    <p className="text-muted-foreground">Interactive Map Coming Soon</p>
-                  </div>
+                {/* Leaflet Map */}
+                <div className="mt-8 h-64 rounded-2xl overflow-hidden">
+                  <MapContainer
+                    center={LUKEMANBNB_COORDS}
+                    zoom={15}
+                    className="h-full w-full z-0"
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={LUKEMANBNB_COORDS}>
+                      <Popup>Lukemanbnb — Nyali Beach, Mombasa</Popup>
+                    </Marker>
+                  </MapContainer>
                 </div>
               </div>
 

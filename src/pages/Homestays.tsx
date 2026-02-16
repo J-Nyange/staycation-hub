@@ -7,6 +7,7 @@ import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import FilterSort from "@/components/FilterSort";
 import { generateBreadcrumbSchema } from "@/lib/structuredData";
+import homestayHero from "@/assets/homestay-cottage.jpg";
 
 const Homestays = () => {
   const { data: homestayProperties = [], isLoading, error } = useProperties('homestay');
@@ -48,26 +49,30 @@ const Homestays = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="py-16 lg:py-24 bg-gradient-to-br from-secondary/10 via-background to-accent/10">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+      <section className="relative py-24 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src={homestayHero} alt="Authentic homestay cottage" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+          <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
             Authentic 
-            <span className="bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {" "}Homestays
             </span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-white/90 max-w-2xl mx-auto mb-8">
             Experience genuine Kenyan hospitality with local families. 
             Immerse yourself in culture while enjoying comfortable accommodations.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <span className="bg-secondary/10 text-secondary px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Local Family Experience
             </span>
-            <span className="bg-accent/10 text-accent-foreground px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Home-cooked Meals
             </span>
-            <span className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm">
+            <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
               Cultural Activities
             </span>
           </div>

@@ -68,15 +68,19 @@ const Blog = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+      <section className="relative py-24 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=1920&q=80" alt="Travel stories" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+        <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center">
+          <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-white">
             Travel 
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {" "}Stories & Tips
             </span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-white/90 max-w-2xl mx-auto">
             Discover insider secrets, local stories, and expert advice to make your coastal Kenya experience unforgettable
           </p>
         </div>

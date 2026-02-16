@@ -31,7 +31,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const CancellationPolicy = lazy(() => import("./pages/CancellationPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const MapView = lazy(() => import("./pages/MapView"));
+
 const Notifications = lazy(() => import("./pages/Notifications"));
 const OwnerBookings = lazy(() => import("./pages/OwnerBookings"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -107,7 +107,7 @@ const App = () => (
                   <Route path="/owner-dashboard" element={<OwnerDashboard />} />
                   <Route path="/properties/:id" element={<PropertyDetails />} />
                   <Route path="/compare" element={<PropertyComparison />} />
-                  <Route path="/map" element={<MapView />} />
+                  
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/owner-bookings" element={<OwnerBookings />} />
                   <Route path="/messages" element={<Messages />} />

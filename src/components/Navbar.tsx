@@ -36,7 +36,6 @@ const Navbar = () => {
 
   const navigation = [
     { name: "Home", href: "/" },
-    { name: "Map View", href: "/map" },
     { name: "Homestays", href: "/homestays" },
     { name: "Airbnb", href: "/airbnb" },
     { name: "Villas", href: "/villas" },
