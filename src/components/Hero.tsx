@@ -103,7 +103,7 @@ const Hero = () => {
               size="lg" 
               variant="outline"
               className="border-white/30 bg-white/10 text-white hover:bg-transparent hover:translate-y-[-5px] transition-transform backdrop-blur-md"
-              onClick={() => window.open('https://www.youtube.com/watch?v=example-tour-video', '_blank')}
+              onClick={() => window.open('https://www.youtube.com/watch?v=SRf_gbDtd4E', '_blank')}
             >
               Watch Virtual Tour
             </Button>

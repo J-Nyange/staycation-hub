@@ -97,7 +97,7 @@ export default function CancellationPolicy() {
             </ol>
 
             <h2>Contact Us</h2>
-            <p>For questions about cancellations or refunds, contact us at vilahorizon04@gmail.com</p>
+            <p>For questions about cancellations or refunds, contact us at <strong>info@lukemanbnb.com</strong></p>
           </CardContent>
         </Card>
       </main>

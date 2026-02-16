@@ -73,7 +73,7 @@ export default function PrivacyPolicy() {
             <p>We may update this policy from time to time. We will notify you of any changes by posting the new policy on this page.</p>
 
             <h2>10. Contact Us</h2>
-            <p>For privacy-related questions, contact us at vilahorizon04@gmail.com</p>
+            <p>For privacy-related questions, contact us at <strong>info@lukemanbnb.com</strong></p>
           </CardContent>
         </Card>
       </main>
