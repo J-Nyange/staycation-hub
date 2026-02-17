@@ -47,7 +47,7 @@ import { useEffect } from "react";
 import { setTokenProvider } from "@/integrations/supabase/client";
 import { BookingModalProvider } from "@/contexts/BookingModalContext";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsubHVrZW1hbmJuYi5jb20k";
 
 const SupabaseTokenSync = () => {
   const { getToken } = useAuth();
