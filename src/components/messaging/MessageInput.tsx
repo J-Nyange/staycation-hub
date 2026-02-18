@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 
 interface MessageInputProps {
@@ -18,8 +18,9 @@ export const MessageInput = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (content.trim() && !disabled) {
-      onSend(content);
+    const trimmed = content.trim();
+    if (trimmed && !disabled && trimmed.length <= 2000) {
+      onSend(trimmed);
       setContent("");
     }
   };
@@ -32,23 +33,24 @@ export const MessageInput = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t">
-      <div className="flex gap-2">
-        <Textarea
+    <form onSubmit={handleSubmit} className="p-3 md:p-4 border-t">
+      <div className="flex gap-2 items-center">
+        <Input
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => setContent(e.target.value.slice(0, 2000))}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="min-h-[80px] resize-none"
+          className="flex-1"
+          maxLength={2000}
         />
-        <Button type="submit" size="icon" disabled={disabled || !content.trim()}>
+        <Button type="submit" size="icon" disabled={disabled || !content.trim()} className="shrink-0">
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
-        Press Enter to send, Shift+Enter for new line
-      </p>
+      {content.length > 1800 && (
+        <p className="text-xs text-muted-foreground mt-1">{content.length}/2000</p>
+      )}
     </form>
   );
 };

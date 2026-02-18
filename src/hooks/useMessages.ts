@@ -28,27 +28,37 @@ export const useMessages = (conversationId: string | null) => {
 
       const { data, error } = await supabase
         .from("messages")
-        .select("*")
+        .select("id, conversation_id, sender_id, content, is_read, created_at")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      // Fetch sender profiles
-      const messagesWithSenders = await Promise.all(
-        (data || []).map(async (message) => {
-          const { data: profile } = await supabase
+      // Batch fetch sender profiles
+      const senderIds = [...new Set((data || []).map((m) => m.sender_id))];
+      const { data: profiles } = senderIds.length > 0
+        ? await supabase
             .from("profiles")
-            .select("first_name, last_name")
-            .eq("user_id", message.sender_id)
-            .single();
+            .select("user_id, first_name, last_name")
+            .in("user_id", senderIds)
+        : { data: [] };
 
-          return {
-            ...message,
-            sender: profile || { first_name: null, last_name: null },
-          };
-        })
+      const profileMap = new Map(
+        (profiles || []).map((p) => [p.user_id, p])
       );
+
+      const messagesWithSenders = (data || []).map((message) => {
+        const profile = profileMap.get(message.sender_id);
+        // Fall back to Clerk user data for current user
+        let senderInfo = { first_name: profile?.first_name || null, last_name: profile?.last_name || null };
+        if ((!senderInfo.first_name && !senderInfo.last_name) && user && message.sender_id === user.id) {
+          senderInfo = { first_name: user.firstName || null, last_name: user.lastName || null };
+        }
+        return {
+          ...message,
+          sender: senderInfo,
+        };
+      });
 
       // Mark messages as read
       if (user) {
@@ -69,10 +79,14 @@ export const useMessages = (conversationId: string | null) => {
     mutationFn: async (content: string) => {
       if (!user || !conversationId) throw new Error("Not authenticated");
 
+      const trimmed = content.trim();
+      if (!trimmed) throw new Error("Message cannot be empty");
+      if (trimmed.length > 2000) throw new Error("Message too long (max 2000 characters)");
+
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        content: content.trim(),
+        content: trimmed,
       });
 
       if (error) throw error;

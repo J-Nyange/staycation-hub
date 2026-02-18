@@ -14,7 +14,7 @@ const BlogSection = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("*")
+        .select("id, title, slug, content, excerpt, featured_image, category, tags, is_published, published_at, created_at, updated_at, is_featured")
         .eq("is_published", true)
         .order("published_at", { ascending: false })
         .limit(3);

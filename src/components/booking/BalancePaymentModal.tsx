@@ -14,7 +14,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import StripePaymentForm from "@/components/StripePaymentForm";
 
-const stripePromise = loadStripe("pk_test_51N7jPrF6g21qrmupA6EPcdNQT4MJgZ7CZ06DmZBG53E1qPiomYCTFetpwARwbhIWp5AoboY4hAYT0SSx8mR5boPr00QIZnyoOl");
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_51N7jPrF6g21qrmupA6EPcdNQT4MJgZ7CZ06DmZBG53E1qPiomYCTFetpwARwbhIWp5AoboY4hAYT0SSx8mR5boPr00QIZnyoOl");
 
 interface BalancePaymentModalProps {
   open: boolean;

@@ -5,15 +5,19 @@ import { MessageInput } from "./MessageInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 
 interface MessageThreadProps {
   conversationId: string | null;
   propertyTitle?: string;
+  onBack?: () => void;
 }
 
 export const MessageThread = ({
   conversationId,
   propertyTitle,
+  onBack,
 }: MessageThreadProps) => {
   const { messages, isLoading, sendMessage, isSending } = useMessages(conversationId);
   useRealtimeMessages(conversationId);
@@ -27,8 +31,9 @@ export const MessageThread = ({
 
   if (!conversationId) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>Select a conversation to start messaging</p>
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 p-8">
+        <MessageSquare className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-center">Select a conversation to start messaging</p>
       </div>
     );
   }
@@ -36,7 +41,8 @@ export const MessageThread = ({
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex items-center gap-3">
+          {onBack && <Skeleton className="h-8 w-8 rounded" />}
           <Skeleton className="h-6 w-48" />
         </div>
         <div className="flex-1 p-4 space-y-4">
@@ -50,13 +56,23 @@ export const MessageThread = ({
 
   return (
     <div className="flex flex-col h-full">
-      {propertyTitle && (
-        <div className="p-4 border-b">
-          <h3 className="font-semibold">{propertyTitle}</h3>
-        </div>
-      )}
-      <ScrollArea className="flex-1 p-4">
-        <div ref={scrollRef} className="space-y-4">
+      <div className="p-3 md:p-4 border-b flex items-center gap-3">
+        {onBack && (
+          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        {propertyTitle && (
+          <h3 className="font-semibold truncate">{propertyTitle}</h3>
+        )}
+      </div>
+      <ScrollArea className="flex-1 p-3 md:p-4">
+        <div ref={scrollRef} className="space-y-3 md:space-y-4">
+          {messages.length === 0 && (
+            <p className="text-center text-muted-foreground text-sm py-8">
+              No messages yet. Send one to start the conversation!
+            </p>
+          )}
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
