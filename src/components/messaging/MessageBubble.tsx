@@ -11,8 +11,9 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
   const { user } = useUser();
   const isOwnMessage = message.sender_id === user?.id;
 
-  const senderName =
-    message.sender.first_name || message.sender.last_name
+  const senderName = isOwnMessage
+    ? "You"
+    : message.sender.first_name || message.sender.last_name
       ? `${message.sender.first_name || ""} ${message.sender.last_name || ""}`.trim()
       : "User";
 
@@ -23,12 +24,10 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         isOwnMessage ? "items-end" : "items-start"
       )}
     >
-      {!isOwnMessage && (
-        <p className="text-xs text-muted-foreground mb-1">{senderName}</p>
-      )}
+      <p className="text-xs text-muted-foreground mb-1">{senderName}</p>
       <div
         className={cn(
-          "max-w-[70%] rounded-lg p-3",
+          "max-w-[80%] md:max-w-[70%] rounded-lg p-3",
           isOwnMessage
             ? "bg-primary text-primary-foreground"
             : "bg-muted"

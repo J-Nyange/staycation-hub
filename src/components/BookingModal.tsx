@@ -12,11 +12,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Info, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus, CheckCircle, Phone, Mail, User } from "lucide-react";
+import { Info, CalendarIcon, Shield, AlertCircle, Loader2, Users, Minus, Plus, CheckCircle, Phone, Mail, User, CreditCard, Clock } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import GroupBookingForm from "@/components/booking/GroupBookingForm";
+import PaystackPaymentForm from "@/components/PaystackPaymentForm";
 import { Property } from "@/hooks/useProperties";
 
 interface BookingModalProps {
@@ -31,6 +32,12 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Booking mode
+  const [bookingMode, setBookingMode] = useState<'pay_now' | 'pay_later'>('pay_now');
+  const [paymentStep, setPaymentStep] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  const [modalHidden, setModalHidden] = useState(false);
   
   // Form State
   const [checkIn, setCheckIn] = useState<Date>();
@@ -61,6 +68,9 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
   const totalGuests = guests.adults + guests.children + guests.infants;
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const totalPrice = nights * (property.price_per_night || 0);
+  const discountedPrice = Math.round(totalPrice * 0.95);
+  const discountAmount = totalPrice - discountedPrice;
+  const finalPrice = bookingMode === 'pay_now' ? discountedPrice : totalPrice;
 
   const handleGuestChange = (type: keyof typeof guests, increment: boolean) => {
     setGuests(prev => ({
@@ -102,7 +112,6 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     e.preventDefault();
     if (!user || !checkIn || !checkOut) return;
 
-    // Validate contact info
     if (!validateContactInfo()) {
       toast({
         variant: "destructive",
@@ -118,7 +127,8 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
       const formattedCheckIn = format(checkIn, 'yyyy-MM-dd');
       const formattedCheckOut = format(checkOut, 'yyyy-MM-dd');
 
-      // Create booking record with awaiting_contact status
+      const isPayNow = bookingMode === 'pay_now';
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -127,17 +137,16 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
           check_in: formattedCheckIn,
           check_out: formattedCheckOut,
           guests: totalGuests,
-          total_price: totalPrice,
+          total_price: finalPrice,
           special_requests: [
             accommodationExplanation ? `[ACCOMMODATION REQUIREMENT]\n${accommodationExplanation}` : null,
             specialRequests
           ].filter(Boolean).join('\n\n') || null,
           status: 'pending',
-          payment_status: 'awaiting_contact',
+          payment_status: isPayNow ? 'pending' : 'awaiting_contact',
           guest_email: guestEmail.trim(),
           guest_phone: guestPhone.trim(),
           guest_name: guestName.trim(),
-          // Group booking fields
           is_group_booking: isGroupBooking,
           group_size: isGroupBooking ? totalGuests : null,
           group_type: isGroupBooking ? groupType : null,
@@ -157,18 +166,20 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
         await supabase.functions.invoke('notify-owner-booking-request', {
           body: { booking_id: booking.id }
         });
-      } catch (notifyError) {
-        console.error('Failed to send owner notification:', notifyError);
+      } catch (_notifyError) {
         // Don't fail the booking if notification fails
       }
       
-      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['property-availability', property.id] });
       queryClient.invalidateQueries({ queryKey: ['availability', property.id] });
       
-      // Show success state
-      setIsSuccess(true);
+      if (isPayNow) {
+        setCreatedBookingId(booking.id);
+        setPaymentStep(true);
+      } else {
+        setIsSuccess(true);
+      }
       
     } catch (error: any) {
       toast({
@@ -189,12 +200,14 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     setAccommodationExplanation('');
     setAcceptedTerms(false);
     setIsSuccess(false);
-    // Reset guest contact (will be re-populated from Clerk on next open)
+    setBookingMode('pay_now');
+    setPaymentStep(false);
+    setCreatedBookingId(null);
+    setModalHidden(false);
     setGuestName("");
     setGuestEmail("");
     setGuestPhone("");
     setContactErrors({});
-    // Reset group booking
     setIsGroupBooking(false);
     setGroupType('');
     setDietaryRequirements('');
@@ -208,8 +221,15 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     }
   }, [open]);
 
+  const handlePaymentSuccess = () => {
+    setModalHidden(false);
+    setPaymentStep(false);
+    setIsSuccess(true);
+  };
+
   // Success State
   if (isSuccess) {
+    const isPayNow = bookingMode === 'pay_now';
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
@@ -219,9 +239,14 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
             </div>
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Booking Request Sent!</h2>
+              <h2 className="text-2xl font-bold">
+                {isPayNow ? "Booking Confirmed!" : "Booking Request Sent!"}
+              </h2>
               <p className="text-muted-foreground">
-                Your request has been sent to the property owner. They will contact you within 24 hours to discuss pricing and arrange payment.
+                {isPayNow 
+                  ? "Your payment was successful and your booking is confirmed."
+                  : "Your request has been sent to the property owner. They will contact you within 24 hours to discuss pricing and arrange payment."
+                }
               </p>
             </div>
             
@@ -231,17 +256,29 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 <p><span className="text-muted-foreground">Property:</span> {property.title}</p>
                 <p><span className="text-muted-foreground">Dates:</span> {checkIn && format(checkIn, "MMM dd, yyyy")} - {checkOut && format(checkOut, "MMM dd, yyyy")}</p>
                 <p><span className="text-muted-foreground">Guests:</span> {totalGuests}</p>
-                <p><span className="text-muted-foreground">Estimated Price:</span> KES {totalPrice.toLocaleString()}</p>
+                <p>
+                  <span className="text-muted-foreground">
+                    {isPayNow ? "Amount Paid:" : "Estimated Price:"}
+                  </span>{" "}
+                  KES {finalPrice.toLocaleString()}
+                  {isPayNow && discountAmount > 0 && (
+                    <span className="text-green-600 text-xs ml-2">(saved KES {discountAmount.toLocaleString()})</span>
+                  )}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                * Final price may vary after discussion with the owner
-              </p>
+              {!isPayNow && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  * Final price may vary after discussion with the owner
+                </p>
+              )}
             </div>
             
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Phone className="h-4 w-4" />
-              <span>The owner will call or email you soon</span>
-            </div>
+            {!isPayNow && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4" />
+                <span>The owner will call or email you soon</span>
+              </div>
+            )}
             
             <Button onClick={() => onOpenChange(false)} className="w-full">
               Done
@@ -252,25 +289,119 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
     );
   }
 
+  // Payment Step (Pay Now with Paystack)
+  if (paymentStep && createdBookingId) {
+    return (
+      <Dialog open={open && !modalHidden} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              Complete Payment
+            </DialogTitle>
+            <DialogDescription>
+              Pay securely via Paystack to confirm your booking instantly.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg text-sm space-y-1">
+              <p><span className="text-muted-foreground">Property:</span> {property.title}</p>
+              <p><span className="text-muted-foreground">Dates:</span> {checkIn && format(checkIn, "MMM dd")} - {checkOut && format(checkOut, "MMM dd, yyyy")}</p>
+              <div className="flex justify-between items-center mt-2 pt-2 border-t border-border">
+                <span className="font-semibold">Total</span>
+                <div className="text-right">
+                  <span className="line-through text-muted-foreground text-xs mr-2">KES {totalPrice.toLocaleString()}</span>
+                  <span className="font-bold text-primary">KES {discountedPrice.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {guestEmail && (
+              <PaystackPaymentForm
+                bookingId={createdBookingId}
+                totalPrice={discountedPrice}
+                email={guestEmail}
+                onSuccess={handlePaymentSuccess}
+                onStart={() => setModalHidden(true)}
+                onEnd={() => setModalHidden(false)}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Request to Book {property.title}</DialogTitle>
+          <DialogTitle className="text-2xl">Book {property.title}</DialogTitle>
           <DialogDescription>
-            Fill in your details and the property owner will contact you to arrange payment.
+            Choose how you'd like to book — pay now for a discount or request to book.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmitRequest} className="space-y-6">
-          {/* No Payment Notice */}
-          <Alert className="border-green-500/20 bg-green-500/10">
-            <Info className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-sm text-green-700 dark:text-green-300">
-              <strong className="font-semibold">No payment required now!</strong>{" "}
-              After you submit this request, the property owner will contact you to discuss pricing and arrange payment. You will not be charged through this website.
-            </AlertDescription>
-          </Alert>
+          {/* Booking Mode Selector */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setBookingMode('pay_now')}
+              className={cn(
+                "relative p-4 rounded-xl border-2 text-left transition-all",
+                bookingMode === 'pay_now'
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">Pay Now</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Instant confirmation</p>
+              <span className="absolute top-2 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                Save 5%
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookingMode('pay_later')}
+              className={cn(
+                "p-4 rounded-xl border-2 text-left transition-all",
+                bookingMode === 'pay_later'
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">Pay Later</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Owner contacts you</p>
+            </button>
+          </div>
+
+          {bookingMode === 'pay_now' && (
+            <Alert className="border-green-500/20 bg-green-500/10">
+              <Info className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-700 dark:text-green-300">
+                <strong className="font-semibold">Save 5% when you pay instantly!</strong>{" "}
+                Your booking will be confirmed immediately after payment via Paystack.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {bookingMode === 'pay_later' && (
+            <Alert className="border-green-500/20 bg-green-500/10">
+              <Info className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-700 dark:text-green-300">
+                <strong className="font-semibold">No payment required now!</strong>{" "}
+                The property owner will contact you to discuss pricing and arrange payment.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Guest Contact Information */}
           <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
@@ -279,7 +410,9 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               <h3 className="font-semibold text-base">Your Contact Information</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              The property owner will use this information to contact you about your booking.
+              {bookingMode === 'pay_later' 
+                ? "The property owner will use this information to contact you about your booking."
+                : "We'll send your booking confirmation to this contact info."}
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,25 +574,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                       <div className="text-sm text-muted-foreground">Ages 13+</div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('adults', false)}
-                        disabled={guests.adults <= 1}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('adults', false)} disabled={guests.adults <= 1} type="button">
                         <Minus className="h-4 w-4" />
                       </Button>
                       <span className="w-10 text-center font-semibold text-base">{guests.adults}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('adults', true)}
-                        disabled={totalGuests >= property.guests}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('adults', true)} disabled={totalGuests >= property.guests} type="button">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -472,25 +591,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                       <div className="text-sm text-muted-foreground">Ages 2-12</div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('children', false)}
-                        disabled={guests.children <= 0}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('children', false)} disabled={guests.children <= 0} type="button">
                         <Minus className="h-4 w-4" />
                       </Button>
                       <span className="w-10 text-center font-semibold text-base">{guests.children}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('children', true)}
-                        disabled={totalGuests >= property.guests}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('children', true)} disabled={totalGuests >= property.guests} type="button">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -503,24 +608,11 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                       <div className="text-sm text-muted-foreground">Under 2</div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('infants', false)}
-                        disabled={guests.infants <= 0}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('infants', false)} disabled={guests.infants <= 0} type="button">
                         <Minus className="h-4 w-4" />
                       </Button>
                       <span className="w-10 text-center font-semibold text-base">{guests.infants}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleGuestChange('infants', true)}
-                        type="button"
-                      >
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleGuestChange('infants', true)} type="button">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -554,7 +646,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
             totalGuests={totalGuests}
           />
 
-          {/* Accommodation Explanation - Only show if guests exceed capacity */}
+          {/* Accommodation Explanation */}
           {totalGuests > property.guests && (
             <div className="space-y-2">
               <Label htmlFor="accommodation-explanation" className="text-base font-semibold text-destructive">
@@ -562,7 +654,7 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               </Label>
               <Textarea
                 id="accommodation-explanation"
-                placeholder="Please explain how the additional guests will be accommodated. This helps the property owner understand your requirements..."
+                placeholder="Please explain how the additional guests will be accommodated..."
                 value={accommodationExplanation}
                 onChange={(e) => setAccommodationExplanation(e.target.value)}
                 className="min-h-[80px] border-destructive/20"
@@ -590,13 +682,27 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
                 <span className="font-semibold">KES {totalPrice.toLocaleString()}</span>
               </div>
               
+              {bookingMode === 'pay_now' && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>5% instant payment discount</span>
+                  <span>- KES {discountAmount.toLocaleString()}</span>
+                </div>
+              )}
+              
               <div className="border-t border-border pt-3 flex justify-between text-lg font-bold">
-                <span>Estimated Total</span>
-                <span className="text-primary">KES {totalPrice.toLocaleString()}</span>
+                <span>{bookingMode === 'pay_now' ? 'Total to Pay' : 'Estimated Total'}</span>
+                <div className="text-right">
+                  {bookingMode === 'pay_now' && discountAmount > 0 && (
+                    <span className="line-through text-muted-foreground text-sm mr-2">KES {totalPrice.toLocaleString()}</span>
+                  )}
+                  <span className="text-primary">KES {finalPrice.toLocaleString()}</span>
+                </div>
               </div>
               
               <p className="text-xs text-muted-foreground">
-                * Final price may vary after discussion with the property owner
+                {bookingMode === 'pay_now' 
+                  ? "You'll be redirected to Paystack to complete payment securely."
+                  : "* Final price may vary after discussion with the property owner"}
               </p>
             </div>
           )}
@@ -649,15 +755,17 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Sending Request...
+                {bookingMode === 'pay_now' ? 'Creating Booking...' : 'Sending Request...'}
               </>
             ) : (
-              "Submit Booking Request"
+              bookingMode === 'pay_now' ? "Proceed to Payment" : "Submit Booking Request"
             )}
           </Button>
           
           <p className="text-xs text-center text-muted-foreground">
-            You will not be charged. The property owner will contact you to discuss and arrange payment.
+            {bookingMode === 'pay_now'
+              ? "You'll pay securely via Paystack. 5% discount applied automatically."
+              : "You will not be charged. The property owner will contact you to discuss and arrange payment."}
           </p>
         </form>
       </DialogContent>

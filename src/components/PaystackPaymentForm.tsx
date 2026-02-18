@@ -36,7 +36,7 @@ export default function PaystackPaymentForm({
     reference,
     email,
     amount: amountInKobo,
-    publicKey: "pk_test_fb1b2723d272883f87a48317d0314621be890bf4",
+    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "pk_test_fb1b2723d272883f87a48317d0314621be890bf4",
     currency: 'KES', // Kenyan Shillings - change to NGN for Nigerian Naira
   };
 

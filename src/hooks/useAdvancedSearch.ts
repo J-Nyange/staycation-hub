@@ -22,7 +22,7 @@ export const useAdvancedSearch = (params: AdvancedSearchParams) => {
     queryFn: async (): Promise<Property[]> => {
       let query = supabase
         .from('properties')
-        .select('*')
+        .select('id, title, description, location, price_per_night, guests, bedrooms, bathrooms, category, amenities, images, main_image, is_active, created_at, updated_at, cancellation_policy, latitude, longitude, property_type, instant_book, deposit_percentage, is_featured, group_booking_enabled, max_group_size, group_discount_percentage, owner_id')
         .eq('is_active', true);
 
       // Location filter
