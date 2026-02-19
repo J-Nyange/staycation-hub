@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Message {
@@ -17,7 +17,7 @@ export interface Message {
 }
 
 export const useMessages = (conversationId: string | null) => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

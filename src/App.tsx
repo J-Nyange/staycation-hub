@@ -9,6 +9,9 @@ import { lazy, Suspense } from "react";
 import CookieBanner from "@/components/CookieBanner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ComparisonBar from "@/components/ComparisonBar";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AuthModal from "@/components/auth/AuthModal";
+import { BookingModalProvider } from "@/contexts/BookingModalContext";
 
 // Lazy-load all route pages for better mobile performance
 const Index = lazy(() => import("./pages/Index"));
@@ -31,6 +34,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const CancellationPolicy = lazy(() => import("./pages/CancellationPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const Notifications = lazy(() => import("./pages/Notifications"));
 const OwnerBookings = lazy(() => import("./pages/OwnerBookings"));
@@ -42,31 +46,6 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 const queryClient = new QueryClient();
 
-import { ClerkProvider, useAuth } from "@clerk/clerk-react";
-import { useEffect } from "react";
-import { setTokenProvider } from "@/integrations/supabase/client";
-import { BookingModalProvider } from "@/contexts/BookingModalContext";
-
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsubHVrZW1hbmJuYi5jb20k";
-
-const SupabaseTokenSync = () => {
-  const { getToken } = useAuth();
-
-  useEffect(() => {
-    setTokenProvider(async () => {
-      try {
-        const token = await getToken({ template: "supabase" });
-        return token || null;
-      } catch (error) {
-        console.error("Failed to get Supabase token from Clerk:", error);
-        return null;
-      }
-    });
-  }, [getToken]);
-
-  return null;
-};
-
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -74,9 +53,8 @@ const PageLoader = () => (
 );
 
 const App = () => (
-  <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-    <SupabaseTokenSync />
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <HelmetProvider>
         <TooltipProvider>
           <Toaster />
@@ -86,6 +64,7 @@ const App = () => (
               <CookieBanner />
               <PWAInstallPrompt />
               <ComparisonBar />
+              <AuthModal />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -115,6 +94,7 @@ const App = () => (
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/cancellation-policy" element={<CancellationPolicy />} />
                   <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
@@ -122,8 +102,8 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </HelmetProvider>
-    </QueryClientProvider>
-  </ClerkProvider>
+    </AuthProvider>
+  </QueryClientProvider>
 );
 
 export default App;

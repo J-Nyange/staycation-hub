@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface BookingNotificationData {
   id: string;
@@ -28,7 +28,7 @@ export interface BookingNotificationData {
 }
 
 export const useBookingNotificationDetails = (bookingId: string | null) => {
-  const { user } = useUser();
+  const { user } = useAuth();
   
   return useQuery({
     queryKey: ["booking-notification-details", bookingId],

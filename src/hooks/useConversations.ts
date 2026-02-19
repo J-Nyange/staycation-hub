@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Conversation {
   id: string;
@@ -29,7 +29,7 @@ export interface Conversation {
 }
 
 export const useConversations = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
 
   return useQuery({
     queryKey: ["conversations", user?.id],

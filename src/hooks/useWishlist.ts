@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export const useWishlist = () => {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -17,7 +17,7 @@ export const useWishlist = () => {
         .from('wishlists')
         .select(`
           id,
-          property_id,
+          created_at,
           properties (
             id,
             title,
@@ -29,10 +29,14 @@ export const useWishlist = () => {
         `)
         .eq('user_id', user.id);
 
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        console.error('Error fetching wishlist:', error);
+        return [];
+      }
+      
+      return data;
     },
-    enabled: !!user,
+    enabled: !!user && isSignedIn,
   });
 
   const addToWishlist = useMutation({
@@ -43,7 +47,7 @@ export const useWishlist = () => {
         .from('wishlists')
         .insert({
           user_id: user.id,
-          property_id: propertyId,
+          property_id: propertyId
         });
 
       if (error) throw error;
@@ -62,7 +66,7 @@ export const useWishlist = () => {
         description: error.message,
       });
     },
-  });
+  }).mutate;
 
   const removeFromWishlist = useMutation({
     mutationFn: async (propertyId: string) => {
@@ -90,19 +94,17 @@ export const useWishlist = () => {
         description: error.message,
       });
     },
-  });
+  }).mutate;
 
   const isInWishlist = (propertyId: string) => {
-    return wishlistItems.some((item: any) => item.property_id === propertyId);
+    return wishlistItems.some((item: any) => item.properties.id === propertyId);
   };
 
   return {
     wishlistItems,
-    isLoading,
-    addToWishlist: addToWishlist.mutate,
-    removeFromWishlist: removeFromWishlist.mutate,
+    isLoading: isLoading || !isLoaded,
+    addToWishlist,
+    removeFromWishlist,
     isInWishlist,
-    isAddingToWishlist: addToWishlist.isPending,
-    isRemovingFromWishlist: removeFromWishlist.isPending,
   };
 };
