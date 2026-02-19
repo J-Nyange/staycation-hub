@@ -1,162 +1,220 @@
 
+# Plan: Migrate from Clerk to Supabase Authentication
 
-# Plan: Booking Payment Options, Messaging UX, and Security Hardening
+## Why Your Current Setup Is Broken
 
-## 1. Re-introduce "Pay Now" with Paystack + "Pay Later" Option in Booking Modal
+Your RLS policies use `(auth.jwt()->>'sub')::text` to identify users. With Clerk development keys, Clerk issued JWTs that Supabase could validate using a shared JWT secret. When you switched to production keys, the JWT signing key changed, causing Supabase to reject the tokens -- so authenticated users see nothing because every RLS check fails.
 
-**File: `src/components/BookingModal.tsx`**
+## Migration Overview
 
-Currently the booking form is "Request to Book" only (pay later). This will be restructured to offer two options:
+This is a large migration touching **38+ files**. All user IDs in your database are Clerk format (`user_35wA9...`) stored as `text`. Supabase Auth uses UUIDs. Since you have relatively few records (3 profiles, 5 bookings, 23 properties), the safest approach is:
 
-### Changes:
-- Add a `bookingMode` state: `'pay_now' | 'pay_later'` with a toggle/radio selector at the top of the form
-- **Pay Now** flow:
-  - Shows a tagline: "Save 5% when you pay instantly!"
-  - Calculates `discountedPrice = totalPrice * 0.95` (5% off)
-  - Shows both original and discounted prices with a strikethrough on the original
-  - After form validation, creates booking with `payment_status: 'pending'` and `status: 'pending'`
-  - Then shows PaystackPaymentForm (using existing component) to complete payment
-  - On successful payment, booking status updates to `confirmed` via the existing `verify-paystack-payment` edge function
-  - The modal hides behind the Paystack popup (using existing `onStart`/`onEnd` pattern)
-- **Pay Later** flow (current behavior):
-  - Keeps the existing "Request to Book" flow unchanged
-  - `payment_status: 'awaiting_contact'`, owner contacts guest offline
-- Price estimate section updated to show the discount when "Pay Now" is selected
-- The `total_price` stored in the database for "Pay Now" will be the discounted amount
+1. Keep `user_id` columns as `text` type (avoids schema breakage)
+2. Store Supabase Auth UUIDs as text (e.g., `auth.uid()::text`)
+3. Update all RLS policies to use `auth.uid()::text` instead of `(auth.jwt()->>'sub')::text`
+4. Replace Clerk components/hooks with Supabase Auth equivalents throughout the frontend
 
-### New state variables:
-- `bookingMode: 'pay_now' | 'pay_later'` (default: `'pay_now'`)
-- `paymentStep: boolean` (to show Paystack form after booking creation)
-- `createdBookingId: string | null`
-- `modalHidden: boolean` (for Paystack popup overlay)
+**Will there be errors?** The migration itself is straightforward, but:
+- Existing user data (profiles, bookings, properties) is tied to Clerk user IDs. New Supabase Auth users will get new UUIDs, so existing data won't auto-link. You'll need to manually update the `user_id`/`owner_id` values for your existing users after they sign up via Supabase Auth.
+- Google/social sign-in requires configuration in your Supabase dashboard.
 
-### UI layout for mode selector:
-```text
-Two cards side by side:
-[Pay Now - Save 5%]    [Pay Later - Request to Book]
- "Instant confirmation"   "Owner contacts you"
+---
+
+## Step 1: Database Migration (SQL)
+
+### 1a. Update all RLS policies to use `auth.uid()::text`
+
+Replace every `(auth.jwt()->>'sub')::text` with `auth.uid()::text` across all tables:
+- `profiles`, `bookings`, `properties`, `reviews`, `wishlists`, `notifications`, `conversations`, `messages`, `blog_posts`, `booking_modifications`, `user_roles`, `push_subscriptions`, `support_conversations`, `support_messages`, `legal_agreements`, `sms_logs`, `blocked_dates`, `seasonal_pricing`
+
+### 1b. Update security definer functions
+
+```sql
+-- Update has_role to accept text (keep as-is, just change callers)
+CREATE OR REPLACE FUNCTION public.has_role(_user_id text, _role app_role)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT public.has_role(auth.uid()::text, 'admin')
+$$;
+```
+
+### 1c. Update trigger functions
+
+All trigger functions that reference user identity (`notify_new_booking`, `notify_booking_status_change`, etc.) don't use `auth.jwt()` directly -- they reference table columns, so they'll continue working.
+
+### 1d. Create profile auto-creation trigger
+
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  INSERT INTO public.profiles (user_id, email, first_name)
+  VALUES (
+    NEW.id::text,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
+  );
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
 ---
 
-## 2. Improve Messaging UX
+## Step 2: Supabase Client Update
 
-### 2a. Fix user names showing as "User"
+**File: `src/integrations/supabase/client.ts`**
 
-**File: `src/hooks/useMessages.ts`**
+Replace the entire custom Clerk token-provider setup with a standard Supabase client:
 
-The current code fetches sender profiles from the `profiles` table. If a profile doesn't exist or has null names, it falls back to "User". Fix:
-- When the profile lookup returns null names, fall back to the Clerk user's name from the conversation context
-- Batch profile fetches instead of N+1 queries (fetch all unique sender IDs in one query)
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './types';
 
-**File: `src/components/messaging/MessageBubble.tsx`**
-- For own messages, show "You" instead of the user's name (already only shows name for others)
-- For other users, the name from the profile will now be correctly populated
+const SUPABASE_URL = "https://aermicluavoxxxhkajah.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGci...";
 
-**File: `src/hooks/useConversations.ts`**
-- Already batch-fetches profiles, but the fallback is "User" when profiles have null names
-- Add fallback to use Clerk user data when available (for own name display)
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
+```
 
-### 2b. Mobile-responsive messaging layout
-
-**File: `src/pages/Messages.tsx`**
-
-Current layout: `grid md:grid-cols-[350px_1fr]` -- on mobile both panels stack vertically which is poor UX.
-
-Change to:
-- On mobile: show conversation list OR message thread (not both), with a back button on the thread view
-- On desktop: keep the current side-by-side layout
-- Add state `showThread` to toggle between list and thread on mobile
-- When a conversation is selected on mobile, hide the list and show the thread with a back arrow
-- Use `useIsMobile()` hook (already exists in the project)
-
-**File: `src/components/messaging/MessageThread.tsx`**
-- Add optional `onBack` prop for mobile back navigation
-- Show a header with back arrow + property title on mobile
-- Reduce padding on mobile for more message space
-
-**File: `src/components/messaging/MessageInput.tsx`**
-- Make input area more compact on mobile (reduce min-height)
-- Use a single-line input with send button on the same row for mobile
-
-**File: `src/components/messaging/ConversationList.tsx`**
-- Add header "Conversations" with message count
-- Improve spacing for mobile touch targets
+Remove the `setTokenProvider` export and all token sync logic.
 
 ---
 
-## 3. Security Hardening -- Hide Sensitive Data from Frontend
+## Step 3: Create Auth Context
 
-### 3a. Select only needed columns instead of `select('*')`
+**New file: `src/contexts/AuthContext.tsx`**
 
-**Files to update with explicit column selections:**
+Create a React context that replaces all Clerk hooks (`useUser`, `useAuth`, `useClerk`):
 
-| File | Table | Columns to select (exclude sensitive) |
-|------|-------|--------------------------------------|
-| `src/hooks/useProperties.ts` | properties | Exclude `commission_rate`, `owner_id` (for public queries) |
-| `src/pages/PropertyDetails.tsx` | properties | Exclude `commission_rate` from public view |
-| `src/hooks/useSearch.ts` | properties | Exclude `commission_rate` |
-| `src/hooks/useAdvancedSearch.ts` | properties | Exclude `commission_rate` |
-| `src/pages/Blog.tsx` | blog_posts | Exclude `author_id`, `moderation_status` |
-| `src/components/BlogSection.tsx` | blog_posts | Exclude `author_id`, `moderation_status` |
-| `src/pages/BlogPost.tsx` | blog_posts | Exclude `moderation_status` for public |
-
-For properties, the public query will select:
-```
-id, title, description, location, price_per_night, guests, bedrooms, bathrooms, category, amenities, images, main_image, is_active, created_at, updated_at, cancellation_policy, latitude, longitude, property_type, instant_book, deposit_percentage, is_featured, group_booking_enabled, max_group_size, group_discount_percentage
+```typescript
+// Provides: user, session, isLoaded, isSignedIn, signOut
+// Listens to supabase.auth.onAuthStateChange
+// Exposes signInWithOAuth, signInWithPassword, signUp, resetPassword
 ```
 
-### 3b. Remove console.log statements that leak data
-
-**Search and remove** any `console.log` or `console.error` calls that output sensitive data (booking details, user IDs, payment info). Keep only generic error messages.
-
-### 3c. Sanitize user-generated content
-
-**File: `src/components/messaging/MessageBubble.tsx`**
-- Content is already rendered as text (not HTML), which is safe
-- Ensure no `dangerouslySetInnerHTML` is used anywhere for user content
-
-**File: `src/pages/BlogPost.tsx`**
-- Blog content uses `react-markdown` which is safe by default
-- Verify no raw HTML rendering
-
-### 3d. Input validation on message sending
-
-**File: `src/hooks/useMessages.ts`**
-- Add content length validation (max 2000 chars) before sending
-- Trim whitespace
-
-### 3e. Remove hardcoded test API keys from client code
-
-**File: `src/components/PaystackPaymentForm.tsx`**
-- The Paystack public key `pk_test_...` is hardcoded. While publishable keys are safe to expose, the test key should be replaced with the production key or loaded from an environment variable.
-
-**File: `src/components/booking/BalancePaymentModal.tsx`**
-- Same -- Stripe test key `pk_test_...` is hardcoded. Replace with production key or env var.
-
-These are publishable keys so not a security risk, but using test keys in production will cause payments to fail. We should use `import.meta.env.VITE_PAYSTACK_PUBLIC_KEY` and `import.meta.env.VITE_STRIPE_PUBLIC_KEY` with production fallbacks.
+This context wraps the app and provides:
+- `user` (equivalent to Clerk's `useUser().user`) with `id`, `email`, `firstName`, `imageUrl`, etc.
+- `isSignedIn`, `isLoaded` booleans
+- `signOut()`, `signInWithOAuth()`, `signInWithPassword()`, `signUp()`
 
 ---
 
-## Summary of All File Changes
+## Step 4: Create Auth UI Components
 
-| File | Changes |
+**New file: `src/components/auth/AuthModal.tsx`**
+
+A dialog-based auth modal with tabs for Sign In / Sign Up, replacing Clerk's `<SignInButton>` and `<SignUpButton>`:
+- Email + password sign in/up
+- Google sign-in button (via `supabase.auth.signInWithOAuth({ provider: 'google' })`)
+- Password reset flow
+- Clean, branded UI matching the existing design
+
+**New file: `src/pages/ResetPassword.tsx`**
+
+Required page for password reset flow -- users land here after clicking the email link.
+
+---
+
+## Step 5: Update App.tsx
+
+- Remove `ClerkProvider`, `SupabaseTokenSync`, and all Clerk imports
+- Wrap app with `AuthProvider` from the new context
+- Add `/reset-password` route
+- Remove the hardcoded Clerk publishable key
+
+---
+
+## Step 6: Update All 38 Files Using Clerk
+
+Every file that imports from `@clerk/clerk-react` needs to be updated:
+
+| What to replace | With |
+|----------------|------|
+| `import { useUser } from '@clerk/clerk-react'` | `import { useAuth } from '@/contexts/AuthContext'` |
+| `const { user } = useUser()` | `const { user } = useAuth()` |
+| `user.id` | `user.id` (now a UUID string) |
+| `user.firstName` | `user.firstName` (mapped from Supabase user metadata) |
+| `user.imageUrl` | `user.avatarUrl` (from user metadata or profile) |
+| `useClerk().signOut()` | `useAuth().signOut()` |
+| `<SignInButton>` | `<AuthModal>` trigger |
+| `<SignUpButton>` | `<AuthModal>` trigger |
+| `useAuth().isSignedIn` | `useAuth().isSignedIn` |
+| `useAuth().userId` | `useAuth().user?.id` |
+| `useAuth().getToken()` | Remove (Supabase handles tokens internally) |
+
+**Files to update** (all 38):
+`Navbar.tsx`, `AdminGuard.tsx`, `BookingModal.tsx`, `PropertyCard.tsx`, `AddPropertyModal.tsx`, `ReviewForm.tsx`, `NotificationSettings.tsx`, `BookingNotificationModal.tsx`, `ResumePaymentModal.tsx`, `TransferOwnershipModal.tsx`, `Profile.tsx`, `Messages.tsx`, `OwnerDashboard.tsx`, `OwnerBookings.tsx`, `BookingHistory.tsx`, `BookingConfirmation.tsx`, `MyProperties.tsx`, `MyBlogPosts.tsx`, `CreateBlogPost.tsx`, `EditBlogPost.tsx`, `Notifications.tsx`, `Wishlist.tsx`, `PropertyDetails.tsx`, `useUserProfile.ts`, `useUserRole.ts`, `useMessages.ts`, `useConversations.ts`, `useNotifications.ts`, `useWishlist.ts`, `useOwnerAnalytics.ts`, `usePushNotifications.ts`, `useRealtimeNotifications.ts`, `useReviews.ts`, `useBookingNotificationDetails.ts`, `useSearch.ts`, `useAdminData.ts`, `App.tsx`
+
+---
+
+## Step 7: Update Edge Functions
+
+Two edge functions manually decode Clerk JWTs (`atob(token.split('.')[1])` to get `payload.sub`):
+
+- `supabase/functions/send-booking-emails/index.ts`
+- `supabase/functions/notify-owner-booking-request/index.ts`
+
+These will be updated to use Supabase's built-in auth:
+```typescript
+const supabaseClient = createClient(url, anonKey, {
+  global: { headers: { Authorization: authHeader } }
+});
+const { data: { user } } = await supabaseClient.auth.getUser();
+const userId = user?.id;
+```
+
+Two other edge functions already use `supabaseClient.auth.getClaims()`:
+- `send-push-notification/index.ts`
+- `send-sms/index.ts`
+
+These will also be updated to use `getUser()` for consistency.
+
+---
+
+## Step 8: Post-Migration Setup (Manual Steps for You)
+
+1. **Enable Google OAuth**: Go to Supabase Dashboard > Authentication > Providers > Google, and add your Google OAuth client ID and secret
+2. **Set Redirect URLs**: In Supabase Dashboard > Authentication > URL Configuration:
+   - Site URL: `https://lukemanbnb.com`
+   - Redirect URLs: `https://lukemanbnb.com/**`
+3. **Re-link existing data**: After your admin user signs up via Supabase Auth, run a SQL update to map the old Clerk user ID to the new Supabase UUID:
+   ```sql
+   -- Example: UPDATE profiles SET user_id = 'new-supabase-uuid' WHERE user_id = 'user_35wA9egXXsSfcza1TUROhHcVl8q';
+   -- Repeat for properties.owner_id, bookings.user_id, etc.
+   ```
+
+---
+
+## Summary
+
+| Area | Changes |
 |------|---------|
-| `src/components/BookingModal.tsx` | Add Pay Now/Pay Later toggle, 5% discount logic, Paystack integration |
-| `src/components/PaystackPaymentForm.tsx` | Use env var for public key |
-| `src/components/booking/BalancePaymentModal.tsx` | Use env var for Stripe public key |
-| `src/pages/Messages.tsx` | Mobile-responsive layout with list/thread toggle |
-| `src/components/messaging/MessageThread.tsx` | Add back button, mobile-optimized layout |
-| `src/components/messaging/MessageInput.tsx` | Compact mobile input |
-| `src/components/messaging/MessageBubble.tsx` | Better name display |
-| `src/components/messaging/ConversationList.tsx` | Header, better mobile touch targets |
-| `src/hooks/useMessages.ts` | Batch profile fetch, input validation, length limits |
-| `src/hooks/useConversations.ts` | Better name fallbacks |
-| `src/hooks/useProperties.ts` | Explicit column selection |
-| `src/hooks/useSearch.ts` | Explicit column selection |
-| `src/hooks/useAdvancedSearch.ts` | Explicit column selection |
-| `src/pages/PropertyDetails.tsx` | Explicit column selection |
-| `src/pages/Blog.tsx` | Explicit column selection |
-| `src/components/BlogSection.tsx` | Explicit column selection |
-| `src/pages/BlogPost.tsx` | Explicit column selection |
-
+| Database | ~40 RLS policy updates, 2 function updates, 1 new trigger |
+| Frontend | 38 files: replace Clerk imports with Supabase Auth context |
+| New files | `AuthContext.tsx`, `AuthModal.tsx`, `ResetPassword.tsx` |
+| Edge functions | 4 functions updated for Supabase auth |
+| Removed deps | `@clerk/clerk-react` (can be uninstalled after) |
+| Manual config | Google OAuth setup in Supabase dashboard, redirect URLs, data re-linking |
