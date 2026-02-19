@@ -3,43 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = "https://aermicluavoxxxhkajah.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwMTE1MTIsImV4cCI6MjA3OTM3MTUxMn0.UFVXpEPhSaM13tXOMTLf5z1bM0cWvrR5O8rIkWAe8CQ";
-
-// Token provider for Clerk integration
-let tokenProvider: () => Promise<string | null> = async () => null;
-
-export const setTokenProvider = (provider: () => Promise<string | null>) => {
-  tokenProvider = provider;
-};
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0OTIwMTYsImV4cCI6MjA3MzA2ODAxNn0.xMaSEgsJG9XmKoKMsh3u-srh2HJN7304NgtWpH1L0hU";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    persistSession: false, // We're using Clerk for auth
-    autoRefreshToken: false,
-  },
-  global: {
-    fetch: async (url, options: RequestInit = {}) => {
-      let token: string | null = null;
-      
-      try {
-        token = await tokenProvider();
-      } catch (error) {
-        console.error('❌ Error getting Clerk token:', error);
-      }
-      
-      const headers = new Headers(options?.headers);
-      
-      // CRITICAL: Always include the Supabase anon key
-      headers.set('apikey', SUPABASE_PUBLISHABLE_KEY);
-      
-      // Always set Authorization header - use Clerk token if available, otherwise use anon key
-      headers.set('Authorization', `Bearer ${token || SUPABASE_PUBLISHABLE_KEY}`);
-      
-      return fetch(url, {
-        ...options,
-        headers,
-      });
-    },
+    persistSession: true,
+    autoRefreshToken: true,
   },
 });

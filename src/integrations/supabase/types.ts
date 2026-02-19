@@ -205,6 +205,7 @@ export type Database = {
           total_price: number
           updated_at: string
           user_id: string
+          user_id_text: string | null
         }
         Insert: {
           accessibility_needs?: string | null
@@ -248,6 +249,7 @@ export type Database = {
           total_price: number
           updated_at?: string
           user_id: string
+          user_id_text?: string | null
         }
         Update: {
           accessibility_needs?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           total_price?: number
           updated_at?: string
           user_id?: string
+          user_id_text?: string | null
         }
         Relationships: [
           {
@@ -590,6 +593,7 @@ export type Database = {
           max_group_size: number | null
           moderation_status: string | null
           owner_id: string | null
+          owner_id_text: string | null
           price_per_night: number
           property_type: string | null
           title: string
@@ -620,6 +624,7 @@ export type Database = {
           max_group_size?: number | null
           moderation_status?: string | null
           owner_id?: string | null
+          owner_id_text?: string | null
           price_per_night: number
           property_type?: string | null
           title: string
@@ -650,6 +655,7 @@ export type Database = {
           max_group_size?: number | null
           moderation_status?: string | null
           owner_id?: string | null
+          owner_id_text?: string | null
           price_per_night?: number
           property_type?: string | null
           title?: string

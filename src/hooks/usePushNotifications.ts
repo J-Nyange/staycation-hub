@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export function usePushNotifications() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);

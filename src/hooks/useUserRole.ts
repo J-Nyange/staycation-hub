@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = 'admin' | 'moderator' | 'user';
@@ -12,7 +12,8 @@ interface UserRole {
 }
 
 export function useUserRole() {
-  const { userId, isSignedIn } = useAuth();
+  const { user, isSignedIn } = useAuth();
+  const userId = user?.id;
 
   const { data: roles, isLoading } = useQuery({
     queryKey: ['user-roles', userId],
