@@ -4,7 +4,7 @@ import { Menu, X, User, Search, LogOut, Heart, Plus, Calendar, Home, FileText, P
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useUser, useClerk, SignInButton, SignUpButton } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUserRole } from "@/hooks/useUserRole";
 import AddPropertyModal from "@/components/AddPropertyModal";
@@ -19,8 +19,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, signOut, openSignIn } = useAuth();
   const { getDisplayName } = useUserProfile();
   const { isAdmin, isModerator } = useUserRole();
 
@@ -174,6 +173,7 @@ const Navbar = () => {
                             variant="ghost" 
                             className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => signOut()}
+
                           >
                             <LogOut className="w-4 h-4 mr-2" />
                             Sign Out
@@ -181,16 +181,12 @@ const Navbar = () => {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <SignInButton mode="modal">
-                            <Button variant="outline" className="w-full">
-                              Sign In
-                            </Button>
-                          </SignInButton>
-                          <SignUpButton mode="modal">
-                            <Button className="w-full">
-                              Sign Up
-                            </Button>
-                          </SignUpButton>
+                          <Button variant="outline" className="w-full" onClick={() => { openSignIn(); setIsMobileMenuOpen(false); }}>
+                            Sign In
+                          </Button>
+                          <Button className="w-full" onClick={() => { openSignIn(); setIsMobileMenuOpen(false); }}>
+                            Sign Up
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -224,7 +220,7 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={user.imageUrl} alt={getDisplayName()} />
+                        <AvatarImage src={user.avatarUrl || undefined} alt={getDisplayName()} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
                           {getUserInitials()}
                         </AvatarFallback>
@@ -248,11 +244,9 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <SignInButton mode="modal">
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <User className="h-4 w-4" />
-                  </Button>
-                </SignInButton>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openSignIn()}>
+                  <User className="h-4 w-4" />
+                </Button>
               )}
             </div>
           </div>
@@ -347,7 +341,7 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="hover:bg-muted h-9 gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.imageUrl} alt={getDisplayName()} />
+                        <AvatarImage src={user.avatarUrl || undefined} alt={getDisplayName()} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
                           {getUserInitials()}
                         </AvatarFallback>
@@ -403,16 +397,12 @@ const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <div className="flex items-center gap-2">
-                  <SignInButton mode="modal">
-                    <Button variant="ghost" size="sm" className="h-9">
-                      Sign In
-                    </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button size="sm" className="h-9">
-                      Sign Up
-                    </Button>
-                  </SignUpButton>
+                  <Button variant="ghost" size="sm" className="h-9" onClick={() => openSignIn()}>
+                    Sign In
+                  </Button>
+                  <Button size="sm" className="h-9" onClick={() => openSignIn()}>
+                    Sign Up
+                  </Button>
                 </div>
               )}
             </div>

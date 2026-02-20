@@ -11,7 +11,7 @@ import {
   BedDouble, Bath, Home
 } from "lucide-react";
 import { useState } from "react";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import BookingModal from "@/components/BookingModal";
@@ -24,8 +24,7 @@ import { getAmenityIcon, formatAmenityText } from "@/lib/amenityIcons";
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { openSignIn } = useClerk();
+  const { user, openSignIn } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(id || "");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -25,7 +25,7 @@ import { ExportButton } from "@/components/analytics/ExportButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function OwnerDashboard() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>("30days");
 

@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingData {
   id: string;
@@ -113,7 +113,7 @@ export default function BookingNotificationModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
-  const { user } = useUser();
+  const { user } = useAuth();
 
   // Determine if current user is the property owner or the guest
   const isOwner = user?.id === bookingData?.owner_id;

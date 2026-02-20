@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -10,7 +10,7 @@ import { useConversations } from "@/hooks/useConversations";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Messages() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const conversationFromUrl = searchParams.get('conversation');
   const isMobile = useIsMobile();
