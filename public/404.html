@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Redirecting...</title>
+<script>
+fetch('/index.html').then(r=>r.text()).then(html=>{
+  document.open();
+  document.write(html);
+  document.close();
+  history.replaceState({},'',location.pathname);
+});
+</script>
