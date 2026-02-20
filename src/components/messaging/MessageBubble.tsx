@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import type { Message } from "@/hooks/useMessages";
@@ -8,7 +8,7 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message }: MessageBubbleProps) => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const isOwnMessage = message.sender_id === user?.id;
 
   const senderName = isOwnMessage

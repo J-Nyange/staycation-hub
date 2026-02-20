@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -34,7 +34,7 @@ interface ResumePaymentModalProps {
 }
 
 export function ResumePaymentModal({ open, onOpenChange, booking }: ResumePaymentModalProps) {
-  const { user } = useUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paystack'>('paystack');

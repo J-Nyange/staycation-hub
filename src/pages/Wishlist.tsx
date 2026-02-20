@@ -1,5 +1,5 @@
 import { useWishlist } from '@/hooks/useWishlist';
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import PropertyCard from '@/components/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const Wishlist = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const { wishlistItems, isLoading } = useWishlist();
 
   if (!user) {

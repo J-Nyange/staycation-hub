@@ -3,7 +3,29 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = "https://aermicluavoxxxhkajah.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0OTIwMTYsImV4cCI6MjA3MzA2ODAxNn0.xMaSEgsJG9XmKoKMsh3u-srh2HJN7304NgtWpH1L0hU";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcm1pY2x1YXZveHh4aGthamFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwMTE1MTIsImV4cCI6MjA3OTM3MTUxMn0.UFVXpEPhSaM13tXOMTLf5z1bM0cWvrR5O8rIkWAe8CQ";
+
+// Clean up any stale auth tokens from before the Clerk→Supabase migration.
+// This runs synchronously at module load, BEFORE the client is created,
+// so no queries can fire with an invalid token.
+const AUTH_STORAGE_KEY = `sb-aermicluavoxxxhkajah-auth-token`;
+try {
+  const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    if (parsed?.access_token) {
+      const payload = JSON.parse(atob(parsed.access_token.split('.')[1]));
+      // Supabase JWTs have iss containing 'supabase'; Clerk JWTs don't
+      if (!payload.iss || !String(payload.iss).includes('supabase')) {
+        console.warn('Clearing stale non-Supabase auth token from localStorage');
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    }
+  }
+} catch {
+  // If we can't parse it, it's definitely not a valid Supabase session — remove it
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

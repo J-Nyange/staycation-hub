@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  // Authentication: decode Clerk JWT manually
+  // Authentication: verify Supabase JWT via getUser()
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(
@@ -43,18 +43,21 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  let userId: string;
-  try {
-    const token = authHeader.replace("Bearer ", "");
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    userId = payload.sub;
-    if (!userId) throw new Error("No sub claim");
-  } catch {
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseUserClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+
+  const { data: { user: authUser }, error: authError } = await supabaseUserClient.auth.getUser();
+  if (authError || !authUser) {
     return new Response(
       JSON.stringify({ error: "Unauthorized: Invalid token" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+  const userId = authUser.id;
 
   try {
     const { booking_id, type }: BookingEmailRequest = await req.json();

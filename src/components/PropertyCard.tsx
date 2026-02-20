@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Heart, MapPin, Star, Users, Wifi, Car, Eye, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyAvailability } from "@/hooks/useAvailability";
 import { useComparison } from "@/hooks/useComparison";
@@ -38,8 +38,7 @@ interface PropertyCardProps {
 
 const PropertyCard = (property: PropertyCardProps) => {
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { openSignIn } = useClerk();
+  const { user, openSignIn } = useAuth();
   const { toast } = useToast();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: availability } = usePropertyAvailability(property.id);

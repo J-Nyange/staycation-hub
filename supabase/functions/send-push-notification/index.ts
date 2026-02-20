@@ -46,9 +46,14 @@ serve(async (req) => {
   let authenticatedUserId: string | null = null;
   if (!isServiceRole && !isInternalCall && authHeader?.startsWith("Bearer ")) {
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    if (!claimsError && claimsData?.claims) {
-      authenticatedUserId = claimsData.claims.sub as string;
+    const supabaseUserClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
+    const { data: { user: authUser }, error: authError } = await supabaseUserClient.auth.getUser();
+    if (!authError && authUser) {
+      authenticatedUserId = authUser.id;
     }
   }
 

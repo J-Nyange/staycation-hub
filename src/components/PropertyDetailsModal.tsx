@@ -17,7 +17,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/hooks/useWishlist";
 import { usePropertyRating } from "@/hooks/useReviews";
 import ReviewList from "@/components/reviews/ReviewList";
@@ -34,8 +34,7 @@ interface PropertyDetailsModalProps {
 const PropertyDetailsModal = ({ property, open, onOpenChange }: PropertyDetailsModalProps) => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
-  const { user } = useUser();
-  const { openSignIn } = useClerk();
+  const { user, openSignIn } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { data: ratingData } = usePropertyRating(property?.id || "");
 

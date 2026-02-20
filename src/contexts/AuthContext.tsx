@@ -64,9 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true);
     });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // THEN check for existing session and validate it
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        // Validate the stored session against the server
+        // This catches stale tokens (e.g. leftover from Clerk migration)
+        const { error } = await supabase.auth.getUser();
+        if (error) {
+          console.warn('Stored session is invalid, clearing it:', error.message);
+          await supabase.auth.signOut();
+          setSession(null);
+        } else {
+          setSession(session);
+        }
+      } else {
+        setSession(null);
+      }
       setIsLoaded(true);
     });
 
