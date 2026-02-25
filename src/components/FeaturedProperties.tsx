@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
 import { useProperties, Property } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Star } from "lucide-react";
 import FilterSort from "./FilterSort";
 
 const FeaturedProperties = () => {
@@ -37,7 +38,7 @@ const FeaturedProperties = () => {
   }
 
   const categories = [
-    { id: "all", label: "All Properties" },
+    { id: "all", label: "Featured Properties" },
     { id: "airbnb", label: "Airbnb" },
     { id: "villa", label: "Villas" },
     { id: "homestay", label: "Homestays" },
@@ -48,8 +49,9 @@ const FeaturedProperties = () => {
       <div className="container mx-auto px-4 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center bg-primary/10 text-primary rounded-full px-4 py-2 text-sm font-medium mb-4">
-            Featured Collection
+          <div className="inline-flex items-center bg-primary/10 text-primary rounded-full px-4 py-2 space-x-2 text-base font-medium mb-4">
+            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+            <span>Featured Collection</span>
           </div>
           <h2 className="text-3xl lg:text-5xl font-bold mb-4">
             Discover Our 
