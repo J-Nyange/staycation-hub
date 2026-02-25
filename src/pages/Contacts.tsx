@@ -47,11 +47,17 @@ const Contacts = () => {
   const onSubmit = async (data: ContactFormValues) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke('contact-form', {
+      const { data: response, error } = await supabase.functions.invoke('contact-form', {
         body: data,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || 'Failed to send message');
+      }
+
+      if (response?.error) {
+        throw new Error(response.error);
+      }
 
       toast({
         title: "Message sent successfully!",
@@ -128,8 +134,8 @@ const Contacts = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Phone Number</h3>
                       <p className="text-muted-foreground">
-                        +254 (0) 700 123 456<br />
-                        +254 (0) 721 987 654
+                        +254 (0) 719 1548 363<br />
+                        +254 (0) 734 007 656
                       </p>
                     </div>
                   </div>
@@ -141,8 +147,8 @@ const Contacts = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Email Address</h3>
                       <p className="text-muted-foreground">
-                        info@Lukemanbnb.com<br />
-                        bookings@Lukemanbnb.com
+                        info@lukemanbnb.com<br />
+                        bookings@lukemanbnb.com
                       </p>
                     </div>
                   </div>

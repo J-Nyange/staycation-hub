@@ -352,13 +352,13 @@ export default function BookingModal({ property, open, onOpenChange }: BookingMo
               className={cn(
                 "relative p-4 rounded-xl border-2 text-left transition-all",
                 bookingMode === 'pay_now'
-                  ? "border-primary bg-primary/5 shadow-sm"
+                  ? "border-primary bg-primary/30 shadow-sm"
                   : "border-border hover:border-muted-foreground/30"
               )}
             >
               <div className="flex items-center gap-2 mb-1">
                 <CreditCard className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">Pay Now</span>
+                <span className="font-semibold text-sm">Pay Now (Coming Soon)</span>
               </div>
               <p className="text-xs text-muted-foreground">Instant confirmation</p>
               <span className="absolute top-2 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
