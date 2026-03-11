@@ -40,7 +40,7 @@ const Hero = () => {
           src={heroVilla}
           alt="Luxury beachfront villa with infinity pool"
           className="w-full h-full object-cover"
-          fetchpriority="high"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent" />
       </div>
